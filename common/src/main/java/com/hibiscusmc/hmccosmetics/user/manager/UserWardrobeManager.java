@@ -56,6 +56,8 @@ public class UserWardrobeManager {
     @Getter
     private final Location viewingLocation;
     @Getter
+    private final Location viewingOpenLocation;
+    @Getter
     private final Location npcLocation;
     @Getter
     private Location exitLocation;
@@ -65,6 +67,10 @@ public class UserWardrobeManager {
     private boolean active;
     @Getter
     private WardrobeStatus wardrobeStatus;
+
+    private BukkitRunnable armorStandRotationRunnable = null;
+    private float armorStandRotationTarget;
+    private float armorStandRotationLast;
 
     public UserWardrobeManager(CosmeticUser user, Wardrobe wardrobe) {
         NPC_ID = NMSHandlers.getHandler().getNextEntityId();
@@ -77,6 +83,7 @@ public class UserWardrobeManager {
 
         this.exitLocation = wardrobeLocation.getLeaveLocation();
         this.viewingLocation = wardrobeLocation.getViewerLocation();
+        this.viewingOpenLocation = wardrobeLocation.getViewerOpenLocation();
         this.npcLocation = wardrobeLocation.getNpcLocation();
 
         wardrobeStatus = WardrobeStatus.SETUP;
@@ -90,6 +97,8 @@ public class UserWardrobeManager {
         if (WardrobeSettings.isReturnLastLocation()) {
             this.exitLocation = player.getLocation().clone();
         }
+
+        armorStandRotationLast = viewingLocation.getYaw();
 
         user.hidePlayer();
         List<Player> viewer = Collections.singletonList(player);
@@ -253,6 +262,8 @@ public class UserWardrobeManager {
             user.updateCosmetic();
         };
         run.run();
+        armorStandRotationRunnable.cancel();
+        armorStandRotationRunnable = null;
     }
 
     public void update() {
@@ -311,6 +322,59 @@ public class UserWardrobeManager {
         };
 
         runnable.runTaskTimer(HMCCosmeticsPlugin.getInstance(), 0, 2);
+    }
+
+    public void guiOpened() {
+        if (armorStandRotationRunnable != null)
+            armorStandRotationRunnable.cancel();
+
+        armorStandRotationTarget = viewingOpenLocation.getYaw();
+        updateArmorStandRotationRunnable(viewingOpenLocation);
+    }
+
+    public void guiClosed() {
+        if (armorStandRotationRunnable != null)
+            armorStandRotationRunnable.cancel();
+
+        armorStandRotationTarget = viewingLocation.getYaw();
+        updateArmorStandRotationRunnable(viewingLocation);
+    }
+
+    private void updateArmorStandRotationRunnable(Location base) {
+        armorStandRotationRunnable = new BukkitRunnable() {
+            @Override
+            public void run() {
+                Player player = user.getPlayer();
+                if (!active || player == null) {
+                    MessagesUtil.sendDebugMessages("WardrobeEnd[user=" + user.getUniqueId() + ",reason=Active is false]");
+                    cancel();
+                    return;
+                }
+                List<Player> viewer = Collections.singletonList(player);
+
+                if (armorStandRotationTarget > armorStandRotationLast) {
+                    armorStandRotationLast += 4f;
+                    if (armorStandRotationLast > armorStandRotationTarget)
+                        armorStandRotationLast = armorStandRotationTarget;
+                } else {
+                    armorStandRotationLast -= 4f;
+                    if (armorStandRotationLast < armorStandRotationTarget)
+                        armorStandRotationLast = armorStandRotationTarget;
+                }
+
+                Location to = base.clone();
+                to.setYaw(armorStandRotationLast);
+
+                PacketManager.sendLookPacket(ARMORSTAND_ID, to, viewer);
+
+                if (armorStandRotationLast == armorStandRotationTarget) {
+                    armorStandRotationRunnable.cancel();
+                    armorStandRotationRunnable = null;
+                }
+            }
+        };
+
+        armorStandRotationRunnable.runTaskTimer(HMCCosmeticsPlugin.getInstance(), 0, 1);
     }
 
     public void setWardrobeStatus(WardrobeStatus status) {

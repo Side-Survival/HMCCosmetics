@@ -110,6 +110,7 @@ public class CosmeticCommandTabComplete implements TabCompleter {
                 case "setwardrobesetting" -> {
                     completions.add("npclocation");
                     completions.add("viewerlocation");
+                    completions.add("vieweropenlocation");
                     completions.add("leavelocation");
                     completions.add("permission");
                     completions.add("distance");

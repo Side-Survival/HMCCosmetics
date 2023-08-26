@@ -67,25 +67,7 @@ public final class HMCCosmeticsPlugin extends JavaPlugin {
             return;
         }
 
-        // Update Checker
-        UpdateChecker checker = new UpdateChecker(this, UpdateCheckSource.POLYMART, "1879")
-                .onSuccess((commandSenders, latestVersion) -> {
-                    this.latestVersion = (String) latestVersion;
-                    if (!this.latestVersion.equalsIgnoreCase(getDescription().getVersion())) {
-                        getLogger().info("+++++++++++++++++++++++++++++++++++");
-                        getLogger().info("There is a new update for HMCCosmetics!");
-                        getLogger().info("Please download it as soon as possible for possible fixes and new features.");
-                        getLogger().info("Current Version " + getDescription().getVersion() + " | Latest Version " + latestVersion);
-                        getLogger().info("Spigot: https://www.spigotmc.org/resources/100107/");
-                        getLogger().info("Polymart: https://polymart.org/resource/1879");
-                        getLogger().info("+++++++++++++++++++++++++++++++++++");
-                    }
-                })
-                .setNotifyRequesters(false)
-                .setNotifyOpsOnJoin(false)
-                .checkEveryXHours(24)
-                .checkNow();
-        onLatestVersion = checker.isUsingLatestVersion();
+        onLatestVersion = true;
         // File setup
         saveDefaultConfig();
         if (!Path.of(getDataFolder().getPath(), "messages.yml").toFile().exists()) saveResource("messages.yml", false);

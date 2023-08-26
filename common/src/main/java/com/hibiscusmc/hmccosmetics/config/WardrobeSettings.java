@@ -30,6 +30,7 @@ public class WardrobeSettings {
     private static final String CLOSE_SOUND = "close-sound";
     private static final String NPC_LOCATION_PATH = "npc-location";
     private static final String VIEWER_LOCATION_PATH = "viewer-location";
+    private static final String VIEWER_OPEN_LOCATION_PATH = "viewer-open-location";
     private static final String LEAVE_LOCATION_PATH = "leave-location";
     private static final String EQUIP_PUMPKIN_WARDROBE = "equip-pumpkin";
     private static final String TRY_COSMETICS_WARDROBE = "unchecked-wardrobe-cosmetics";
@@ -165,9 +166,11 @@ public class WardrobeSettings {
                 MessagesUtil.sendDebugMessages("Wardrobe Location: " + npcLocation);
                 Location viewerLocation = LocationSerializer.INSTANCE.deserialize(Location.class, wardrobesNode.node(VIEWER_LOCATION_PATH));
                 MessagesUtil.sendDebugMessages("Viewer Location: " + viewerLocation);
+                Location viewerOpenLocation = LocationSerializer.INSTANCE.deserialize(Location.class, wardrobesNode.node(VIEWER_OPEN_LOCATION_PATH));
+                MessagesUtil.sendDebugMessages("Viewer open Location: " + viewerOpenLocation);
                 Location leaveLocation = Utils.replaceIfNull(LocationSerializer.INSTANCE.deserialize(Location.class, wardrobesNode.node(LEAVE_LOCATION_PATH)), viewerLocation);
                 MessagesUtil.sendDebugMessages("Leave Location: " + leaveLocation);
-                WardrobeLocation wardrobeLocation = new WardrobeLocation(npcLocation, viewerLocation, leaveLocation);
+                WardrobeLocation wardrobeLocation = new WardrobeLocation(npcLocation, viewerLocation, viewerOpenLocation, leaveLocation);
 
                 String permission = null;
                 int distance = -1;
@@ -236,6 +239,25 @@ public class WardrobeSettings {
         plugin.getConfig().set("wardrobe.wardrobes." + wardrobe.getId() + ".viewer-location.z", newLocation.getZ());
         plugin.getConfig().set("wardrobe.wardrobes." + wardrobe.getId() + ".viewer-location.yaw", newLocation.getYaw());
         plugin.getConfig().set("wardrobe.wardrobes." + wardrobe.getId() + ".viewer-location.pitch", newLocation.getPitch());
+
+        plugin.saveConfig();
+    }
+
+    /**
+     * Sets where the player will view the wardrobe when GUI is opened
+     * @param newLocation
+     */
+    public static void setViewerOpenLocation(Wardrobe wardrobe, Location newLocation) {
+        wardrobe.getLocation().setViewerLocation(newLocation);
+
+        HMCCosmeticsPlugin plugin = HMCCosmeticsPlugin.getInstance();
+
+        plugin.getConfig().set("wardrobe.wardrobes." + wardrobe.getId() + ".viewer-open-location.world", newLocation.getWorld().getName());
+        plugin.getConfig().set("wardrobe.wardrobes." + wardrobe.getId() + ".viewer-open-location.x", newLocation.getX());
+        plugin.getConfig().set("wardrobe.wardrobes." + wardrobe.getId() + ".viewer-open-location.y", newLocation.getY());
+        plugin.getConfig().set("wardrobe.wardrobes." + wardrobe.getId() + ".viewer-open-location.z", newLocation.getZ());
+        plugin.getConfig().set("wardrobe.wardrobes." + wardrobe.getId() + ".viewer-open-location.yaw", newLocation.getYaw());
+        plugin.getConfig().set("wardrobe.wardrobes." + wardrobe.getId() + ".viewer-open-location.pitch", newLocation.getPitch());
 
         plugin.saveConfig();
     }

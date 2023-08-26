@@ -9,9 +9,9 @@ import org.jetbrains.annotations.NotNull;
 /**
  * A hook that integrates the plugin {@link com.hibiscusmc.hmccosmetics.HMCCosmeticsPlugin HMCCosmetics} to provide cosmetic items
  */
-public class HookHMCCosmetics extends Hook {
-    public HookHMCCosmetics() {
-        super("HMCCosmetics");
+public class HookSurvivalCosmetics extends Hook {
+    public HookSurvivalCosmetics() {
+        super("SurvivalCosmetics");
         setEnabledItemHook(true);
     }
 

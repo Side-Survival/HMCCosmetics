@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.hibiscusmc"
-version = "2.6.1"
+version = "2.6.0-SIDE"
 
 allprojects {
     apply(plugin = "java")
@@ -75,7 +75,7 @@ allprojects {
         compileOnly("com.ticxo:modelengine:R3.0.1")
         compileOnly("com.github.oraxen:oraxen:1.160.0")
         compileOnly("com.github.LoneDev6:API-ItemsAdder:3.2.5")
-        compileOnly("com.mineinabyss:geary-papermc:0.24.1")
+        compileOnly("com.mineinabyss:geary-papermc:0.25-SNAPSHOT")
         compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.1.0-SNAPSHOT")
         compileOnly("it.unimi.dsi:fastutil:8.5.11")
         compileOnly("com.github.LeonMangler:SuperVanish:6.2.17")
@@ -89,10 +89,6 @@ allprojects {
 
 dependencies {
     implementation(project(path = ":common"))
-    implementation(project(path = ":v1_18_R2", configuration = "reobf"))
-    implementation(project(path = ":v1_19_R1", configuration = "reobf"))
-    implementation(project(path = ":v1_19_R2", configuration = "reobf"))
-    implementation(project(path = ":v1_19_R3", configuration = "reobf"))
     implementation(project(path = ":v1_20_R1", configuration = "reobf"))
 
     //compileOnly("com.github.Fisher2911:FisherLib:master-SNAPSHOT")
@@ -130,10 +126,6 @@ tasks {
     }
 
     shadowJar {
-        dependsOn(":v1_18_R2:reobfJar")
-        dependsOn(":v1_19_R1:reobfJar")
-        dependsOn(":v1_19_R2:reobfJar")
-        dependsOn(":v1_19_R3:reobfJar")
         dependsOn(":v1_20_R1:reobfJar")
         mergeServiceFiles()
 
@@ -148,14 +140,14 @@ tasks {
         relocate("com.owen1212055.particlehelper", "com.hisbiscusmc.hmccosmetics.particlehelper")
         relocate("com.ticxo.playeranimator", "com.hisbiscusmc.hmccosmetics.playeranimator")
         relocate("com.bgsoftware", "com.hisbiscusmc.hmccosmetics.configupdater")
-        archiveFileName.set("HMCCosmeticsRemapped-${project.version}.jar")
+        archiveFileName.set("SurvivalCosmetics-${project.version}.jar")
 
         dependencies {
             exclude(dependency("org.yaml:snakeyaml"))
         }
 
         doLast {
-            archiveFile.get().asFile.copyTo(layout.projectDirectory.file("run/plugins/HMCCosmeticsRemapped.jar").asFile, true)
+            archiveFile.get().asFile.copyTo(layout.projectDirectory.file("run/plugins/SurvivalCosmetics.jar").asFile, true)
             println("If you use the plugin, consider buying it for: ")
             println("The custom resource pack, Oraxen + ItemAdder configurations, and Discord support!")
             println("Polymart: https://polymart.org/resource/1879")

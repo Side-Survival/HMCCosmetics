@@ -29,15 +29,27 @@ public class WGHook {
     public WGHook() {
         FlagRegistry registry = WorldGuard.getInstance().getFlagRegistry();
         try {
-            StateFlag cosmeticFlag = new StateFlag("cosmetic-enable", false);
-            StateFlag emoteFlag = new StateFlag("emotes-enable", false);
-            StringFlag wardrobeFlag = new StringFlag("cosmetic-wardrobe");
-            registry.register(cosmeticFlag);
-            registry.register(emoteFlag);
-            registry.register(wardrobeFlag);
-            COSMETIC_ENABLE_FLAG = cosmeticFlag;
-            EMOTES_ENABLE_FLAG = emoteFlag;
-            COSMETIC_WARDROBE_FLAG = wardrobeFlag;
+            if (registry.get("cosmetic-enable") == null) {
+                StateFlag cosmeticFlag = new StateFlag("cosmetic-enable", false);
+                registry.register(cosmeticFlag);
+                COSMETIC_ENABLE_FLAG = cosmeticFlag;
+            } else {
+                COSMETIC_ENABLE_FLAG = (StateFlag) registry.get("cosmetic-enable");
+            }
+            if (registry.get("emotes-enable") == null) {
+                StateFlag emoteFlag = new StateFlag("emotes-enable", false);
+                registry.register(emoteFlag);
+                EMOTES_ENABLE_FLAG = emoteFlag;
+            } else {
+                EMOTES_ENABLE_FLAG = (StateFlag) registry.get("emotes-enable");
+            }
+            if (registry.get("cosmetic-wardrobe") == null) {
+                StringFlag wardrobeFlag = new StringFlag("cosmetic-wardrobe");
+                registry.register(wardrobeFlag);
+                COSMETIC_WARDROBE_FLAG = wardrobeFlag;
+            } else {
+                COSMETIC_WARDROBE_FLAG = (StringFlag) registry.get("cosmetic-wardrobe");
+            }
         } catch (FlagConflictException e) {
             Flag<?> existing = registry.get("cosmetic-enable");
             if (existing instanceof StateFlag) {

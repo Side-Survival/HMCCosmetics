@@ -39,6 +39,8 @@ import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.entity.*;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -368,6 +370,23 @@ public class PlayerGameListener implements Listener {
             Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(HMCCosmeticsPlugin.getInstance(), user::respawnBackpack, 1);
 		}
 	}
+
+    @EventHandler
+    public void onGuiClose(InventoryCloseEvent event) {
+        Player player = (Player) event.getPlayer();
+        CosmeticUser user = CosmeticUsers.getUser(player);
+        if (user == null || !user.isInWardrobe()) return;
+
+        Bukkit.getServer().getScheduler().runTaskLater(HMCCosmeticsPlugin.getInstance(), () -> {
+            if (player.getOpenInventory().getType() != InventoryType.CREATIVE)
+                return;
+
+            if (!user.isInWardrobe())
+                return;
+
+            user.getWardrobeManager().guiClosed();
+        }, 2L);
+    }
 
     private void registerInventoryClickListener() {
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(HMCCosmeticsPlugin.getInstance(), ListenerPriority.NORMAL, PacketType.Play.Client.WINDOW_CLICK) {

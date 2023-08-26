@@ -10,11 +10,14 @@ public class WardrobeLocation {
     @Setter
     private Location viewerLocation;
     @Setter
+    private Location viewerOpenLocation;
+    @Setter
     private Location leaveLocation;
 
-    public WardrobeLocation(Location npcLocation, Location viewerLocation, Location leaveLocation) {
+    public WardrobeLocation(Location npcLocation, Location viewerLocation, Location viewerOpenLocation, Location leaveLocation) {
         this.npcLocation = npcLocation;
         this.viewerLocation = viewerLocation;
+        this.viewerOpenLocation = viewerOpenLocation;
         this.leaveLocation = leaveLocation;
     }
 
@@ -26,12 +29,15 @@ public class WardrobeLocation {
         return viewerLocation.clone();
     }
 
+    public Location getViewerOpenLocation() {
+        return viewerOpenLocation.clone();
+    }
+
     public Location getLeaveLocation() {
         return leaveLocation.clone();
     }
 
     public boolean hasAllLocations() {
-        if (npcLocation == null || viewerLocation == null || leaveLocation == null) return false;
-        return true;
+        return npcLocation != null && viewerLocation != null && leaveLocation != null;
     }
 }
