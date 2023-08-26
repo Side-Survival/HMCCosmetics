@@ -117,7 +117,7 @@ public class Menu {
     }
 
     public void openMenu(@NotNull CosmeticUser user, boolean ignorePermission) {
-        if (id.equalsIgnoreCase("defaultmenu"))
+        if (id.equalsIgnoreCase("defaultmenu") && user.isInWardrobe())
             user.getWardrobeManager().guiOpened();
 
         Player player = user.getPlayer();

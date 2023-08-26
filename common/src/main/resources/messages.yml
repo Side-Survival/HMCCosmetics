@@ -38,3 +38,9 @@ invalid-color: "%prefix% <red>Invalid Color!"
 
 debug-enabled: "%prefix% <gradient:#6D9DC5:#45CDE9>Enabled Debug Mode!"
 debug-disabled: "%prefix% <gradient:#6D9DC5:#45CDE9>Disabled Debug Mode!"
+
+locked-item-lore:
+  - ""
+
+wardrobe-item-lore:
+  - ""

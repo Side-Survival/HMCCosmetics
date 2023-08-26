@@ -12,6 +12,7 @@ import com.hibiscusmc.hmccosmetics.gui.type.Type;
 import com.hibiscusmc.hmccosmetics.hooks.Hooks;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
+import com.hibiscusmc.hmccosmetics.util.misc.StringUtils;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
@@ -25,6 +26,7 @@ import org.spongepowered.configurate.serialize.SerializationException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class TypeCosmetic extends Type {
 
@@ -129,6 +131,7 @@ public class TypeCosmetic extends Type {
         if (config.node("cosmetic").virtual()) {
             return itemStack;
         }
+
         String cosmeticName = config.node("cosmetic").getString();
         Cosmetic cosmetic = Cosmetics.getCosmetic(cosmeticName);
         if (cosmetic == null) {
@@ -152,22 +155,29 @@ public class TypeCosmetic extends Type {
             return itemStack;
         }
 
-        if (!user.canEquipCosmetic(cosmetic) && !config.node("locked-item").virtual()) {
-            MessagesUtil.sendDebugMessages("GUI Locked Item");
-            ConfigurationNode lockedItem = config.node("locked-item");
-            try {
-                if (lockedItem.node("material").virtual()) lockedItem.node("material").set(config.node("item", "material").getString());
-            } catch (SerializationException e) {
-                // Nothing >:)
+        if (!user.canEquipCosmetic(cosmetic, true)) {
+            if (user.isInWardrobe()) {
+                List<String> lockedLore = MessagesUtil.getListString("wardrobe-item-lore");
+                ItemMeta meta = itemStack.getItemMeta();
+                meta.setLore(lockedLore.stream().map(StringUtils::parseStringToString).collect(Collectors.toList()));
+                itemStack.setItemMeta(meta);
+                itemStack.setItemMeta(processLoreLines(user, meta));
+            } else {
+                ItemStack unavailableItem = Hooks.getItem(Settings.getUnavailableItemMaterial());
+
+                List<String> lockedLore = MessagesUtil.getListString("locked-item-lore");
+                ItemMeta meta = itemStack.getItemMeta();
+                if (unavailableItem != null) {
+                    itemStack.setType(unavailableItem.getType());
+                    meta.setCustomModelData(Settings.getUnavailableItemData());
+                }
+                meta.setLore(lockedLore.stream().map(StringUtils::parseStringToString).collect(Collectors.toList()));
+                itemStack.setItemMeta(meta);
+                itemStack.setItemMeta(processLoreLines(user, meta));
             }
-            try {
-                itemStack = ItemSerializer.INSTANCE.deserialize(ItemStack.class, lockedItem);
-            } catch (SerializationException e) {
-                throw new RuntimeException(e);
-            }
-            itemStack.setItemMeta(processLoreLines(user, itemStack.getItemMeta()));
             return itemStack;
         }
+
         return itemStack;
     }
 

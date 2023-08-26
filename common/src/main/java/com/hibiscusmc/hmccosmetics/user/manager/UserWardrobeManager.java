@@ -262,8 +262,10 @@ public class UserWardrobeManager {
             user.updateCosmetic();
         };
         run.run();
-        armorStandRotationRunnable.cancel();
-        armorStandRotationRunnable = null;
+        if (armorStandRotationRunnable != null) {
+            armorStandRotationRunnable.cancel();
+            armorStandRotationRunnable = null;
+        }
     }
 
     public void update() {
