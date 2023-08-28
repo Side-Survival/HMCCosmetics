@@ -1,9 +1,7 @@
 package com.hibiscusmc.hmccosmetics.config;
 
-import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Location;
-import org.jetbrains.annotations.Nullable;
 
 public class WardrobeLocation {
 
@@ -29,6 +27,10 @@ public class WardrobeLocation {
 
     public Location getViewerLocation() {
         return viewerLocation.clone();
+    }
+
+    public Location getViewerOpenLocation() {
+        return viewerOpenLocation;
     }
 
     public Location getLeaveLocation() {

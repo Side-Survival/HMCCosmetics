@@ -94,6 +94,8 @@ public class WardrobeSettings {
     private static GameMode exitGamemode;
     private static HashMap<String, Wardrobe> wardrobes;
     @Getter
+    private static Wardrobe defaultWardrobe = null;
+    @Getter
     private static String bossbarMessage;
     @Getter
     private static BossBar.Overlay bossbarOverlay;
@@ -179,6 +181,9 @@ public class WardrobeSettings {
 
                 Wardrobe wardrobe = new Wardrobe(id, wardrobeLocation, permission, distance);
                 addWardrobe(wardrobe);
+
+                if (id.equalsIgnoreCase("default"))
+                    defaultWardrobe = wardrobe;
             } catch (Exception e) {
                 MessagesUtil.sendDebugMessages("Unable to create wardrobe " + id, Level.SEVERE);
             }

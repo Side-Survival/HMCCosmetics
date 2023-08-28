@@ -90,6 +90,9 @@ public class UserWardrobeManager {
     }
 
     public void start() {
+        if (wardrobeStatus == WardrobeStatus.STARTING)
+            return;
+
         setWardrobeStatus(WardrobeStatus.STARTING);
         Player player = user.getPlayer();
 

@@ -35,6 +35,20 @@ public class WGListener implements Listener {
                 user.showCosmetics();
             }
         }
+
+        // Wardrobe enter region
+
+        for (ProtectedRegion protectedRegion : set.getRegions()) {
+            if (protectedRegion.getId().equalsIgnoreCase("wardrobe-enter")) {
+                if (WardrobeSettings.getDefaultWardrobe() != null) {
+                    user.enterWardrobe(true, WardrobeSettings.getDefaultWardrobe());
+                    return;
+                }
+           }
+        }
+
+        // Flags
+
         for (ProtectedRegion protectedRegion : set.getRegions()) {
             if (protectedRegion.getFlags().containsKey(WGHook.getCosmeticEnableFlag())) {
                 if (protectedRegion.getFlags().get(WGHook.getCosmeticEnableFlag()).toString().equalsIgnoreCase("ALLOW")) {
