@@ -39,7 +39,9 @@ public class Settings {
     private static final String COSMETIC_EMOTE_INVINCIBLE_PATH = "emote-invincible";
     private static final String COSMETIC_EMOTE_CAMERA_PATH = "emote-camera";
     private static final String COSMETIC_EMOTE_MOVE_CHECK_PATH = "emote-move";
+    private static final String COSMETIC_PACKET_ENTITY_TELEPORT_COOLDOWN_PATH = "entity-cooldown-teleport-packet";
     private static final String COSMETIC_BACKPACK_FORCE_RIDING_PACKET_PATH = "backpack-force-riding-packet";
+    private static final String COSMETIC_FORCE_OFFHAND_COSMETIC_SHOW_PATH = "offhand-always-show";
     private static final String COSMETIC_ADD_ENCHANTS_HELMET_PATH = "helmet-add-enchantments";
     private static final String COSMETIC_ADD_ENCHANTS_CHESTPLATE_PATH = "chest-add-enchantments";
     private static final String COSMETIC_ADD_ENCHANTS_LEGGINGS_PATH = "leggings-add-enchantments";
@@ -105,9 +107,13 @@ public class Settings {
     @Getter
     private static boolean backpackForceRidingEnabled;
     @Getter
+    private static boolean cosmeticForceOffhandCosmeticShow;
+    @Getter
     private static int viewDistance;
     @Getter
     private static int tickPeriod;
+    @Getter
+    private static int packetEntityTeleportCooldown;
     @Getter
     private static double emoteDistance;
     @Getter
@@ -179,6 +185,8 @@ public class Settings {
         viewDistance = cosmeticSettings.node(VIEW_DISTANCE_PATH).getInt(-3);
         emoteCameraEnabled = cosmeticSettings.node(COSMETIC_EMOTE_CAMERA_PATH).getBoolean(true);
         emoteMoveCheck = cosmeticSettings.node(COSMETIC_EMOTE_MOVE_CHECK_PATH).getBoolean(false);
+        packetEntityTeleportCooldown = cosmeticSettings.node(COSMETIC_PACKET_ENTITY_TELEPORT_COOLDOWN_PATH).getInt(-1);
+        cosmeticForceOffhandCosmeticShow = cosmeticSettings.node(COSMETIC_FORCE_OFFHAND_COSMETIC_SHOW_PATH).getBoolean(false);
 
         ConfigurationNode menuSettings = source.node(MENU_SETTINGS_PATH);
 

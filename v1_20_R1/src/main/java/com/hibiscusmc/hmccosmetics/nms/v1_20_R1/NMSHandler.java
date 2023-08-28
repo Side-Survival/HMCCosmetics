@@ -1,14 +1,9 @@
 package com.hibiscusmc.hmccosmetics.nms.v1_20_R1;
 
-import com.hibiscusmc.hmccosmetics.config.Settings;
-import com.hibiscusmc.hmccosmetics.cosmetic.CosmeticSlot;
-import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticArmorType;
 import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticBackpackType;
 import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticBalloonType;
-import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticMainhandType;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
 import com.hibiscusmc.hmccosmetics.user.manager.UserBalloonManager;
-import com.hibiscusmc.hmccosmetics.util.InventoryUtils;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.chat.Component;
@@ -57,16 +52,10 @@ public class NMSHandler implements com.hibiscusmc.hmccosmetics.nms.NMSHandler {
     private net.minecraft.world.entity.Entity getNMSEntity(int entityId) {
         for (ServerLevel world : ((CraftServer) Bukkit.getServer()).getHandle().getServer().getAllLevels()) {
             net.minecraft.world.entity.Entity entity = world.getEntity(entityId);
-            if (entity == null) return null;
+            if (entity == null) continue;
             return entity;
         }
         return null;
-    }
-
-    @Override
-    public org.bukkit.entity.Entity getHMCArmorStand(Location loc) {
-        HMCArmorStand hmcArmorStand = new HMCArmorStand(loc);
-        return hmcArmorStand.getBukkitEntity();
     }
 
     @Override
@@ -114,54 +103,6 @@ public class NMSHandler implements com.hibiscusmc.hmccosmetics.nms.NMSHandler {
         userBalloonManager1.addPlayerToModel(user, cosmeticBalloonType, user.getCosmeticColor(cosmeticBalloonType.getSlot()));
 
         return userBalloonManager1;
-    }
-
-    @Override
-    public void equipmentSlotUpdate(
-            int entityId,
-            CosmeticUser user,
-            CosmeticSlot cosmeticSlot,
-            List<Player> sendTo
-    ) {
-
-        EquipmentSlot nmsSlot = null;
-        net.minecraft.world.item.ItemStack nmsItem = null;
-
-        if (!(user.getCosmetic(cosmeticSlot) instanceof CosmeticArmorType)) {
-
-            if (user.getCosmetic(cosmeticSlot) instanceof CosmeticMainhandType) {
-                CosmeticMainhandType cosmeticMainhandType = (CosmeticMainhandType) user.getCosmetic(CosmeticSlot.MAINHAND);
-                nmsItem = CraftItemStack.asNMSCopy(user.getUserCosmeticItem(cosmeticMainhandType));
-            } else {
-                nmsItem = CraftItemStack.asNMSCopy(user.getPlayer().getInventory().getItem(InventoryUtils.getEquipmentSlot(cosmeticSlot)));
-            }
-
-            nmsSlot = CraftEquipmentSlot.getNMS(InventoryUtils.getEquipmentSlot(cosmeticSlot));
-
-            if (nmsSlot == null) return;
-
-            Pair<EquipmentSlot, net.minecraft.world.item.ItemStack> pair = new Pair<>(nmsSlot, nmsItem);
-
-            List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> pairs = Collections.singletonList(pair);
-
-            ClientboundSetEquipmentPacket packet = new ClientboundSetEquipmentPacket(entityId, pairs);
-            for (Player p : sendTo) sendPacket(p, packet);
-            return;
-        }
-        CosmeticArmorType cosmeticArmor = (CosmeticArmorType) user.getCosmetic(cosmeticSlot);
-
-        // Converting EquipmentSlot and ItemStack to NMS ones.
-        nmsSlot = CraftEquipmentSlot.getNMS(cosmeticArmor.getEquipSlot());
-        nmsItem = CraftItemStack.asNMSCopy(user.getUserCosmeticItem(cosmeticArmor));
-
-        if (nmsSlot == null) return;
-
-        Pair<EquipmentSlot, net.minecraft.world.item.ItemStack> pair = new Pair<>(nmsSlot, nmsItem);
-
-        List<Pair<EquipmentSlot, net.minecraft.world.item.ItemStack>> pairs = Collections.singletonList(pair);
-
-        ClientboundSetEquipmentPacket packet = new ClientboundSetEquipmentPacket(entityId, pairs);
-        for (Player p : sendTo) sendPacket(p, packet);
     }
 
 

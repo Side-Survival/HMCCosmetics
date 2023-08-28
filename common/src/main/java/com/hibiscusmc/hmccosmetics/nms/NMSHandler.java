@@ -1,6 +1,5 @@
 package com.hibiscusmc.hmccosmetics.nms;
 
-import com.hibiscusmc.hmccosmetics.cosmetic.CosmeticSlot;
 import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticBackpackType;
 import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticBalloonType;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
@@ -19,8 +18,6 @@ public interface NMSHandler {
 
     Entity getEntity(int entityId);
 
-    Entity getHMCArmorStand(Location loc);
-
     ArmorStand getMEGEntity(Location loc);
 
     Entity spawnBackpack(CosmeticUser user, CosmeticBackpackType cosmeticBackpackType);
@@ -28,14 +25,6 @@ public interface NMSHandler {
     Entity spawnDisplayEntity(Location location, String text);
 
     UserBalloonManager spawnBalloon(CosmeticUser user, CosmeticBalloonType cosmeticBalloonType);
-
-    @Deprecated(since = "2.6.0")
-    void equipmentSlotUpdate(
-            int entityId,
-            CosmeticUser user,
-            CosmeticSlot cosmeticSlot,
-            List<Player> sendTo
-    );
 
     void slotUpdate(
             Player player,

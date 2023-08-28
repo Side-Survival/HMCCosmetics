@@ -58,6 +58,7 @@ public class PlayerGameListener implements Listener {
     public PlayerGameListener() {
         registerInventoryClickListener();
         registerMenuChangeListener();
+        registerEntityStatusListener();
         registerPlayerEquipmentListener();
         registerPlayerArmListener();
         registerEntityUseListener();
@@ -498,10 +499,22 @@ public class PlayerGameListener implements Listener {
                 if (user == null) {
                     return;
                 }
-
                 List<com.comphenix.protocol.wrappers.Pair<EnumWrappers.ItemSlot, ItemStack>> armor = event.getPacket().getSlotStackPairLists().read(0);
 
                 for (EquipmentSlot equipmentSlot : EquipmentSlot.values()) {
+                    if (equipmentSlot.equals(EquipmentSlot.HAND)) {
+                        Pair<EnumWrappers.ItemSlot, ItemStack> pair = new Pair<>(EnumWrappers.ItemSlot.MAINHAND, user.getPlayer().getInventory().getItemInMainHand());
+                        armor.add(pair);
+                        continue;
+                    }
+                    if (equipmentSlot.equals(EquipmentSlot.OFF_HAND)) {
+                        if (Settings.isCosmeticForceOffhandCosmeticShow() && user.hasCosmeticInSlot(CosmeticSlot.OFFHAND)) {
+                            ItemStack item = user.getUserCosmeticItem(CosmeticSlot.OFFHAND);
+                            Pair<EnumWrappers.ItemSlot, ItemStack> pair = new Pair<>(EnumWrappers.ItemSlot.OFFHAND, item);
+                            armor.add(pair);
+                        }
+                        continue;
+                    }
                     CosmeticArmorType cosmeticArmor = (CosmeticArmorType) user.getCosmetic(InventoryUtils.BukkitCosmeticSlot(equipmentSlot));
                     if (cosmeticArmor == null) continue;
                     Pair<EnumWrappers.ItemSlot, ItemStack> pair = new Pair<>(InventoryUtils.itemBukkitSlot(cosmeticArmor.getEquipSlot()), cosmeticArmor.getItem());
@@ -510,6 +523,27 @@ public class PlayerGameListener implements Listener {
 
                 event.getPacket().getSlotStackPairLists().write(0, armor);
                 MessagesUtil.sendDebugMessages("Equipment for " + user.getPlayer().getName() + " has been updated for " + player.getName());
+            }
+        });
+    }
+
+    private void registerEntityStatusListener() {
+        ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(HMCCosmeticsPlugin.getInstance(), ListenerPriority.NORMAL, PacketType.Play.Server.ENTITY_STATUS) {
+            @Override
+            public void onPacketSending(PacketEvent event) {
+                int entityid = event.getPacket().getIntegers().read(0);
+                byte status = event.getPacket().getBytes().read(0);
+
+                MessagesUtil.sendDebugMessages("EntityStatus Initial " + entityid + " - " + status);
+                if (status != 55) return;
+
+                CosmeticUser user = CosmeticUsers.getUser(entityid);
+                if (user == null) {
+                    MessagesUtil.sendDebugMessages("EntityStatus User is null");
+                    return;
+                }
+                if (!user.hasCosmeticInSlot(CosmeticSlot.OFFHAND)) return;
+                event.setCancelled(true);
             }
         });
     }
@@ -557,7 +591,11 @@ public class PlayerGameListener implements Listener {
                 MessagesUtil.sendDebugMessages("Look Packet ");
                 Player player = event.getPlayer();
                 if (event.getPlayer() == null) return;
-                if (!(event.getPlayer() instanceof Player)) return;
+                CosmeticUser user = CosmeticUsers.getUser(player);
+                if (user == null) return;
+                if (user.isBackpackSpawned()) {
+                    user.getUserBackpackManager().getEntityManager().setRotation(Math.round(event.getPacket().getFloat().read(0)));
+                }
             }
         });
     }
@@ -570,20 +608,29 @@ public class PlayerGameListener implements Listener {
                 MessagesUtil.sendDebugMessages("Position Packet ");
                 Player player = event.getPlayer();
                 if (event.getPlayer() == null) return;
-                if (!(event.getPlayer() instanceof Player)) return;
+                CosmeticUser user = CosmeticUsers.getUser(player);
+                if (user == null) return;
+                if (user.isBackpackSpawned()) {
+                    // The yaw follows the head, which makes it look weird and do weird things when moving around
+                    user.getUserBackpackManager().getEntityManager().teleport(new Location(player.getWorld(), event.getPacket().getDoubles().read(0), event.getPacket().getDoubles().read(1), event.getPacket().getDoubles().read(2), event.getPacket().getFloat().read(0), event.getPacket().getFloat().read(1)));
+                }
             }
         });
     }
 
     private void registerTeleportMovement() {
-        ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(HMCCosmeticsPlugin.getInstance(), ListenerPriority.NORMAL, PacketType.Play.Client.TELEPORT_ACCEPT) {
+        ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(HMCCosmeticsPlugin.getInstance(), ListenerPriority.NORMAL, PacketType.Play.Client.POSITION_LOOK) {
             @Override
             public void onPacketReceiving(PacketEvent event) {
                 // TODO: Finish
                 MessagesUtil.sendDebugMessages("Teleport Packet ");
                 Player player = event.getPlayer();
                 if (event.getPlayer() == null) return;
-                if (!(event.getPlayer() instanceof Player)) return;
+                CosmeticUser user = CosmeticUsers.getUser(player);
+                if (user == null) return;
+                if (user.isBackpackSpawned()) {
+                    Bukkit.getScheduler().runTask(HMCCosmeticsPlugin.getInstance(), () -> user.updateCosmetic(CosmeticSlot.BACKPACK));
+                }
             }
         });
     }
