@@ -178,6 +178,7 @@ bukkit {
 
     commands {
         register("cosmetic") {
+            aliases = listOf("cosmetics")
             description = "Base Cosmetic Command"
         }
     }

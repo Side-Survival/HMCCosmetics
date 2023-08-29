@@ -379,7 +379,7 @@ public class PlayerGameListener implements Listener {
         if (user == null || !user.isInWardrobe()) return;
 
         Bukkit.getServer().getScheduler().runTaskLater(HMCCosmeticsPlugin.getInstance(), () -> {
-            if (player.getOpenInventory().getType() != InventoryType.CREATIVE)
+            if (player.getOpenInventory().getType() != InventoryType.CREATIVE && player.getOpenInventory().getType() != InventoryType.CRAFTING)
                 return;
 
             if (!user.isInWardrobe())

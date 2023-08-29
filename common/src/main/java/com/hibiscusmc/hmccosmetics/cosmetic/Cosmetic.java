@@ -18,6 +18,8 @@ public abstract class Cosmetic {
 
     @Getter @Setter
     private String id;
+    @Getter
+    private String formattedName = "?";
     @Getter @Setter
     private String permission;
     private ItemStack item;
@@ -40,6 +42,10 @@ public abstract class Cosmetic {
         if (!config.node("item").virtual()) {
             this.material = config.node("item", "material").getString();
             this.item = generateItemStack(config.node("item"));
+
+            if (!config.node("item").node("name").virtual()) {
+                this.formattedName = config.node("item").node("name").getString();
+            }
         }
 
         MessagesUtil.sendDebugMessages("Slot: " + config.node("slot").getString());
