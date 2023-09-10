@@ -17,6 +17,7 @@ public class CosmeticMainhandType extends Cosmetic {
     @Override
     public void update(@NotNull CosmeticUser user) {
         Player player = user.getPlayer();
+        if (user.isInWardrobe()) return;
 
         PacketManager.equipmentSlotUpdate(player.getEntityId(), user, getSlot(), PlayerUtils.getNearbyPlayers(player));
     }

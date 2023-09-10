@@ -27,7 +27,7 @@ public class CosmeticArmorType extends Cosmetic {
     @Override
     public void update(@NotNull CosmeticUser user) {
         Entity entity = Bukkit.getEntity(user.getUniqueId());
-        if (entity == null) return;
+        if (entity == null || user.isInWardrobe()) return;
         if (user.getUserEmoteManager().isPlayingEmote()) return; // There has to be a better way of doing this...
         ItemStack cosmeticItem = user.getUserCosmeticItem(this);
         if (!(entity instanceof HumanEntity humanEntity)) return;
