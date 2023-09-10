@@ -105,11 +105,6 @@ public class PlayerGameListener implements Listener {
         if (event.isSneaking()) {
             user.getUserEmoteManager().stopEmote(UserEmoteManager.StopEmoteReason.SNEAK);
         }
-
-        if (!event.isSneaking()) return;
-        if (!user.isInWardrobe()) return;
-
-        user.leaveWardrobe();
     }
 
     @EventHandler(priority = EventPriority.LOW)
@@ -592,6 +587,11 @@ public class PlayerGameListener implements Listener {
                 if (user.getUserEmoteManager().isPlayingEmote() || user.isInWardrobe()) {
                     event.setCancelled(true);
                 }
+                if (!user.isInWardrobe()) return;
+                Menu menu = Menus.getDefaultMenu();
+                if (menu == null) return;
+                menu.openMenu(user);
+                event.setCancelled(true);
             }
         });
     }

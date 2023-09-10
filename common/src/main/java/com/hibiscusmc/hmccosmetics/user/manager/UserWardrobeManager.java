@@ -23,7 +23,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
@@ -39,8 +38,6 @@ public class UserWardrobeManager {
 
     @Getter
     private final int NPC_ID;
-    @Getter
-    private final int ARMORSTAND_ID;
     @Getter
     private final UUID WARDROBE_UUID;
     @Getter
@@ -74,7 +71,6 @@ public class UserWardrobeManager {
 
     public UserWardrobeManager(CosmeticUser user, Wardrobe wardrobe) {
         NPC_ID = NMSHandlers.getHandler().getNextEntityId();
-        ARMORSTAND_ID = NMSHandlers.getHandler().getNextEntityId();
         WARDROBE_UUID = UUID.randomUUID();
         this.user = user;
 
@@ -89,6 +85,7 @@ public class UserWardrobeManager {
         wardrobeStatus = WardrobeStatus.SETUP;
     }
 
+    @SuppressWarnings("ConstantConditions")
     public void start() {
         if (wardrobeStatus == WardrobeStatus.STARTING)
             return;
@@ -103,7 +100,6 @@ public class UserWardrobeManager {
 
         armorStandRotationLast = viewingLocation.getYaw();
 
-        user.hidePlayer();
         List<Player> viewer = Collections.singletonList(player);
         List<Player> outsideViewers = PacketManager.getViewers(viewingLocation);
         outsideViewers.remove(player);
@@ -111,14 +107,8 @@ public class UserWardrobeManager {
         MessagesUtil.sendMessage(player, "opened-wardrobe");
 
         Runnable run = () -> {
-            // Armorstand
-            PacketManager.sendEntitySpawnPacket(viewingLocation, ARMORSTAND_ID, EntityType.ARMOR_STAND, UUID.randomUUID(), viewer);
-            PacketManager.sendArmorstandMetadata(ARMORSTAND_ID, viewer);
-            PacketManager.sendLookPacket(ARMORSTAND_ID, viewingLocation, viewer);
-
             // Player
-            PacketManager.gamemodeChangePacket(player, 3);
-            PacketManager.sendCameraPacket(ARMORSTAND_ID, viewer);
+            player.teleport(viewingLocation);
 
             // NPC
             npcName = "WardrobeNPC-" + NPC_ID;
@@ -143,7 +133,7 @@ public class UserWardrobeManager {
             if (user.hasCosmeticInSlot(CosmeticSlot.BACKPACK)) {
                 // Maybe null as backpack maybe despawned before entering
                 if (user.getUserBackpackManager() == null) user.respawnBackpack();
-                user.getUserBackpackManager().getEntityManager().teleport(npcLocation.clone().add(0, 2, 0));
+                user.getUserBackpackManager().getEntityManager().teleport(npcLocation.clone().add(0.5, 2, 0.5));
                 NMSHandlers.getHandler().equipmentSlotUpdate(user.getUserBackpackManager().getFirstArmorStandId(), EquipmentSlot.HEAD, user.getUserCosmeticItem(user.getCosmetic(CosmeticSlot.BACKPACK)), viewer);
                 PacketManager.ridingMountPacket(NPC_ID, user.getUserBackpackManager().getFirstArmorStandId(), viewer);
             }
@@ -154,7 +144,7 @@ public class UserWardrobeManager {
                 user.getBalloonManager().sendLeashPacket(NPC_ID);
                 //PacketManager.sendLeashPacket(VIEWER.getBalloonEntity().getModelId(), NPC_ID, viewer);
 
-                Location balloonLocation = npcLocation.clone().add(cosmetic.getBalloonOffset());
+                Location balloonLocation = npcLocation.clone().add(0, 2, 0);
                 PacketManager.sendTeleportPacket(user.getBalloonManager().getPufferfishBalloonId(), balloonLocation , false, viewer);
                 user.getBalloonManager().getModelEntity().teleport(balloonLocation);
             }
@@ -177,6 +167,8 @@ public class UserWardrobeManager {
             this.active = true;
             update();
             setWardrobeStatus(WardrobeStatus.RUNNING);
+
+            PacketManager.sendLookPacket(NPC_ID, npcLocation, viewer);
         };
 
 
@@ -195,6 +187,7 @@ public class UserWardrobeManager {
 
     }
 
+    @SuppressWarnings("ConstantConditions")
     public void end() {
         setWardrobeStatus(WardrobeStatus.STOPPING);
         Player player = user.getPlayer();
@@ -222,32 +215,12 @@ public class UserWardrobeManager {
             PacketManager.sendEntityDestroyPacket(NPC_ID, viewer); // Success
             PacketManager.sendRemovePlayerPacket(player, WARDROBE_UUID, viewer); // Success
 
-            // Player
-            PacketManager.sendCameraPacket(player.getEntityId(), viewer);
-
-            // Armorstand
-            PacketManager.sendEntityDestroyPacket(ARMORSTAND_ID, viewer); // Sucess
-
-            //PacketManager.sendEntityDestroyPacket(player.getEntityId(), viewer); // Success
-            if (WardrobeSettings.isForceExitGamemode()) {
-                MessagesUtil.sendDebugMessages("Force Exit Gamemode " + WardrobeSettings.getExitGamemode());
-                player.setGameMode(WardrobeSettings.getExitGamemode());
-                PacketManager.gamemodeChangePacket(player, ServerUtils.convertGamemode(WardrobeSettings.getExitGamemode())); // Success
-            } else {
-                MessagesUtil.sendDebugMessages("Original Gamemode " + this.originalGamemode);
-                player.setGameMode(this.originalGamemode);
-                PacketManager.gamemodeChangePacket(player, ServerUtils.convertGamemode(this.originalGamemode)); // Success
-            }
-            user.showPlayer();
-
             if (user.hasCosmeticInSlot(CosmeticSlot.BACKPACK)) {
                 user.respawnBackpack();
-                //PacketManager.ridingMountPacket(player.getEntityId(), VIEWER.getBackpackEntity().getEntityId(), viewer);
             }
 
             if (user.hasCosmeticInSlot(CosmeticSlot.BALLOON)) {
                 user.respawnBalloon();
-                //PacketManager.sendLeashPacket(VIEWER.getBalloonEntity().getPufferfishBalloonId(), player.getEntityId(), viewer);
             }
 
             player.teleport(Objects.requireNonNullElseGet(exitLocation, () -> player.getWorld().getSpawnLocation()));
@@ -273,6 +246,7 @@ public class UserWardrobeManager {
 
     public void update() {
         final AtomicInteger data = new AtomicInteger();
+        data.set((int) npcLocation.getYaw());
 
         BukkitRunnable runnable = new BukkitRunnable() {
             @Override
@@ -293,9 +267,8 @@ public class UserWardrobeManager {
                 location.setYaw(yaw);
 
                 PacketManager.sendLookPacket(NPC_ID, location, viewer);
-                user.hidePlayer();
                 int rotationSpeed = WardrobeSettings.getRotationSpeed();
-                location.setYaw(ServerUtils.getNextYaw(yaw - 30, rotationSpeed));
+                location.setYaw(ServerUtils.getNextYaw(yaw - 5, rotationSpeed));
                 PacketManager.sendRotationPacket(NPC_ID, location, true, viewer);
                 int nextyaw = ServerUtils.getNextYaw(yaw, rotationSpeed);
                 data.set(nextyaw);
@@ -330,56 +303,56 @@ public class UserWardrobeManager {
     }
 
     public void guiOpened() {
-        if (armorStandRotationRunnable != null)
-            armorStandRotationRunnable.cancel();
-
-        armorStandRotationTarget = viewingOpenLocation.getYaw();
-        updateArmorStandRotationRunnable(viewingOpenLocation);
+//        if (armorStandRotationRunnable != null)
+//            armorStandRotationRunnable.cancel();
+//
+//        armorStandRotationTarget = viewingOpenLocation.getYaw();
+//        updateArmorStandRotationRunnable(viewingOpenLocation);
     }
 
     public void guiClosed() {
-        if (armorStandRotationRunnable != null)
-            armorStandRotationRunnable.cancel();
-
-        armorStandRotationTarget = viewingLocation.getYaw();
-        updateArmorStandRotationRunnable(viewingLocation);
+//        if (armorStandRotationRunnable != null)
+//            armorStandRotationRunnable.cancel();
+//
+//        armorStandRotationTarget = viewingLocation.getYaw();
+//        updateArmorStandRotationRunnable(viewingLocation);
     }
 
     private void updateArmorStandRotationRunnable(Location base) {
-        armorStandRotationRunnable = new BukkitRunnable() {
-            @Override
-            public void run() {
-                Player player = user.getPlayer();
-                if (!active || player == null) {
-                    MessagesUtil.sendDebugMessages("WardrobeEnd[user=" + user.getUniqueId() + ",reason=Active is false]");
-                    cancel();
-                    return;
-                }
-                List<Player> viewer = Collections.singletonList(player);
-
-                if (armorStandRotationTarget > armorStandRotationLast) {
-                    armorStandRotationLast += 4f;
-                    if (armorStandRotationLast > armorStandRotationTarget)
-                        armorStandRotationLast = armorStandRotationTarget;
-                } else {
-                    armorStandRotationLast -= 4f;
-                    if (armorStandRotationLast < armorStandRotationTarget)
-                        armorStandRotationLast = armorStandRotationTarget;
-                }
-
-                Location to = base.clone();
-                to.setYaw(armorStandRotationLast);
-
-                PacketManager.sendLookPacket(ARMORSTAND_ID, to, viewer);
-
-                if (armorStandRotationLast == armorStandRotationTarget) {
-                    armorStandRotationRunnable.cancel();
-                    armorStandRotationRunnable = null;
-                }
-            }
-        };
-
-        armorStandRotationRunnable.runTaskTimer(HMCCosmeticsPlugin.getInstance(), 0, 1);
+//        armorStandRotationRunnable = new BukkitRunnable() {
+//            @Override
+//            public void run() {
+//                Player player = user.getPlayer();
+//                if (!active || player == null) {
+//                    MessagesUtil.sendDebugMessages("WardrobeEnd[user=" + user.getUniqueId() + ",reason=Active is false]");
+//                    cancel();
+//                    return;
+//                }
+//                List<Player> viewer = Collections.singletonList(player);
+//
+//                if (armorStandRotationTarget > armorStandRotationLast) {
+//                    armorStandRotationLast += 4f;
+//                    if (armorStandRotationLast > armorStandRotationTarget)
+//                        armorStandRotationLast = armorStandRotationTarget;
+//                } else {
+//                    armorStandRotationLast -= 4f;
+//                    if (armorStandRotationLast < armorStandRotationTarget)
+//                        armorStandRotationLast = armorStandRotationTarget;
+//                }
+//
+//                Location to = base.clone();
+//                to.setYaw(armorStandRotationLast);
+//
+//                stand.teleport(to);
+//
+//                if (armorStandRotationLast == armorStandRotationTarget) {
+//                    armorStandRotationRunnable.cancel();
+//                    armorStandRotationRunnable = null;
+//                }
+//            }
+//        };
+//
+//        armorStandRotationRunnable.runTaskTimer(HMCCosmeticsPlugin.getInstance(), 0, 1);
     }
 
     public void setWardrobeStatus(WardrobeStatus status) {

@@ -25,6 +25,7 @@ public class WGHook {
      * @implNote Please use {@link #getCosmeticWardrobeFlag()} instead
      */
     private static StringFlag COSMETIC_WARDROBE_FLAG;
+    private static StateFlag COSMETIC_WARDROBE_EXIT_FLAG;
 
     public WGHook() {
         FlagRegistry registry = WorldGuard.getInstance().getFlagRegistry();
@@ -49,6 +50,13 @@ public class WGHook {
                 COSMETIC_WARDROBE_FLAG = wardrobeFlag;
             } else {
                 COSMETIC_WARDROBE_FLAG = (StringFlag) registry.get("cosmetic-wardrobe");
+            }
+            if (registry.get("cosmetic-wardrobe-exit") == null) {
+                StateFlag wardrobeFlag = new StateFlag("cosmetic-wardrobe-exit", false);
+                registry.register(wardrobeFlag);
+                COSMETIC_WARDROBE_EXIT_FLAG = wardrobeFlag;
+            } else {
+                COSMETIC_WARDROBE_EXIT_FLAG = (StateFlag) registry.get("cosmetic-wardrobe-exit");
             }
         } catch (FlagConflictException e) {
             Flag<?> existing = registry.get("cosmetic-enable");
@@ -86,4 +94,11 @@ public class WGHook {
         return COSMETIC_WARDROBE_FLAG;
     }
 
+    /**
+     * Gets the cosmetic wardrobe exit {@link StateFlag}
+     * @return The cosmetic wardrobe exit {@link StateFlag}
+     */
+    public static StateFlag getCosmeticWardrobeExitFlag() {
+        return COSMETIC_WARDROBE_EXIT_FLAG;
+    }
 }

@@ -8,6 +8,7 @@ import com.hibiscusmc.hmccosmetics.user.CosmeticUsers;
 import com.hibiscusmc.hmccosmetics.user.manager.UserEmoteManager;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -32,6 +33,13 @@ public class PlayerConnectionListener implements Listener {
         } else {
             run.run();
         }
+
+        Bukkit.getScheduler().runTaskLater(HMCCosmeticsPlugin.getInstance(), () -> {
+            if (event.getPlayer().getGameMode() == GameMode.SPECTATOR && !event.getPlayer().hasPermission("wardrobe.spectatormode")) {
+                event.getPlayer().setGameMode(GameMode.SURVIVAL);
+                event.getPlayer().teleport(event.getPlayer().getWorld().getSpawnLocation());
+            }
+        }, 10L);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)

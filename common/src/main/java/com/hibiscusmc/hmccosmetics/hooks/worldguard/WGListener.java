@@ -36,17 +36,6 @@ public class WGListener implements Listener {
             }
         }
 
-        // Wardrobe enter region
-
-        for (ProtectedRegion protectedRegion : set.getRegions()) {
-            if (protectedRegion.getId().equalsIgnoreCase("wardrobe-enter")) {
-                if (WardrobeSettings.getDefaultWardrobe() != null) {
-                    user.enterWardrobe(true, WardrobeSettings.getDefaultWardrobe());
-                    return;
-                }
-           }
-        }
-
         // Flags
 
         for (ProtectedRegion protectedRegion : set.getRegions()) {
@@ -59,9 +48,13 @@ public class WGListener implements Listener {
                 return;
             }
             if (protectedRegion.getFlags().containsKey(WGHook.getCosmeticWardrobeFlag())) {
-                if (!WardrobeSettings.getWardrobeNames().contains(protectedRegion.getFlags().get(WGHook.getCosmeticWardrobeFlag()).toString())) return;
+                if (!WardrobeSettings.getWardrobeNames().contains(protectedRegion.getFlags().get(WGHook.getCosmeticWardrobeFlag()).toString()))
+                    return;
                 Wardrobe wardrobe = WardrobeSettings.getWardrobe(protectedRegion.getFlags().get(WGHook.getCosmeticWardrobeFlag()).toString());
                 user.enterWardrobe(true, wardrobe);
+            }
+            else if (protectedRegion.getFlags().containsKey(WGHook.getCosmeticWardrobeExitFlag())) {
+                user.leaveWardrobe();
             }
         }
     }
@@ -87,9 +80,13 @@ public class WGListener implements Listener {
                 return;
             }
             if (protectedRegion.getFlags().containsKey(WGHook.getCosmeticWardrobeFlag())) {
-                if (!WardrobeSettings.getWardrobeNames().contains(protectedRegion.getFlags().get(WGHook.getCosmeticWardrobeFlag()).toString())) return;
+                if (!WardrobeSettings.getWardrobeNames().contains(protectedRegion.getFlags().get(WGHook.getCosmeticWardrobeFlag()).toString()))
+                    return;
                 Wardrobe wardrobe = WardrobeSettings.getWardrobe(protectedRegion.getFlags().get(WGHook.getCosmeticWardrobeFlag()).toString());
                 user.enterWardrobe(true, wardrobe);
+            }
+            else if (protectedRegion.getFlags().containsKey(WGHook.getCosmeticWardrobeExitFlag())) {
+                user.leaveWardrobe();
             }
         }
     }
