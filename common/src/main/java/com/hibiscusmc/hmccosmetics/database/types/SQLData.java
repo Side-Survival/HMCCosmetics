@@ -18,6 +18,7 @@ public abstract class SQLData extends Data {
     @SuppressWarnings({"resource"}) // Duplicate is from deprecated InternalData
     public CosmeticUser get(UUID uniqueId) {
         CosmeticUser user = new CosmeticUser(uniqueId);
+        user.showCosmetics();
 
         Bukkit.getScheduler().runTaskAsynchronously(HMCCosmeticsPlugin.getInstance(), () -> {
             try {

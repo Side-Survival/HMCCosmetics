@@ -11,6 +11,7 @@ import com.hibiscusmc.hmccosmetics.gui.Menu;
 import com.hibiscusmc.hmccosmetics.gui.Menus;
 import com.hibiscusmc.hmccosmetics.nms.NMSHandlers;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
+import com.hibiscusmc.hmccosmetics.user.CosmeticUsers;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import com.hibiscusmc.hmccosmetics.util.ServerUtils;
 import com.hibiscusmc.hmccosmetics.util.packets.PacketManager;
@@ -101,10 +102,17 @@ public class UserWardrobeManager {
         armorStandRotationLast = viewingLocation.getYaw();
 
         List<Player> viewer = Collections.singletonList(player);
-        List<Player> outsideViewers = PacketManager.getViewers(viewingLocation);
-        outsideViewers.remove(player);
 
         MessagesUtil.sendMessage(player, "opened-wardrobe");
+
+        for (Player oPlayer : Bukkit.getOnlinePlayers()) {
+            CosmeticUser oUser = CosmeticUsers.getUser(oPlayer.getUniqueId());
+            if (oUser == null || !oUser.isInWardrobe())
+                continue;
+
+            player.hidePlayer(oPlayer);
+            oPlayer.hidePlayer(player);
+        }
 
         Runnable run = () -> {
             // Player
@@ -187,10 +195,25 @@ public class UserWardrobeManager {
         Player player = user.getPlayer();
 
         List<Player> viewer = Collections.singletonList(player);
-        List<Player> outsideViewers = PacketManager.getViewers(viewingLocation);
-        outsideViewers.remove(player);
 
-        if (player != null) MessagesUtil.sendMessage(player, "closed-wardrobe");
+        if (player != null) {
+            MessagesUtil.sendMessage(player, "closed-wardrobe");
+        } else {
+            for (Player oPlayer : Bukkit.getOnlinePlayers()) {
+                if (player.canSee(oPlayer) || (!player.canSee(oPlayer) && oPlayer.canSee(player)))
+                    continue;
+
+                CosmeticUser oUser = CosmeticUsers.getUser(oPlayer.getUniqueId());
+                if (oUser != null && oUser.isInWardrobe())
+                    continue;
+
+                player.showPlayer(oPlayer);
+                oPlayer.showPlayer(player);
+            }
+            if (player.hasPermission("cosmetics.admin")) {
+                player.sendMessage("You are no longer invisible, reapply your vanish!");
+            }
+        }
 
         Runnable run = () -> {
             this.active = false;
@@ -345,6 +368,8 @@ public class UserWardrobeManager {
     private void updateBalloonLocation() {
         List<Player> viewer = Collections.singletonList(user.getPlayer());
         CosmeticBalloonType cosmetic = (CosmeticBalloonType) user.getCosmetic(CosmeticSlot.BALLOON);
+        if (cosmetic == null)
+            return;
         Location balloonLocation = npcLocation.clone().add(cosmetic.getBalloonOffset().clone().setY(2.5));
 
         PacketManager.sendTeleportPacket(user.getBalloonManager().getPufferfishBalloonId(), balloonLocation , false, viewer);

@@ -69,7 +69,14 @@ public class CosmeticUser {
         Runnable run = () -> {
             MessagesUtil.sendDebugMessages("Tick[uuid=" + uniqueId + "]", Level.INFO);
             updateCosmetic();
-            if (getHidden() && !getUserEmoteManager().isPlayingEmote()) MessagesUtil.sendActionBar(getPlayer(), "hidden-cosmetics");
+            Player player = getPlayer();
+            if (player == null || !player.isOnline()) {
+                destroy();
+                return;
+            }
+
+            if (getHidden() && !getUserEmoteManager().isPlayingEmote())
+                MessagesUtil.sendActionBar(player, "hidden-cosmetics");
         };
 
         int tickPeriod = Settings.getTickPeriod();
