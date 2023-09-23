@@ -44,7 +44,7 @@ public class WGListener implements Listener {
                     if (user.getHiddenReason() == CosmeticUser.HiddenReason.WORLDGUARD) user.showCosmetics();
                     return;
                 }
-                user.hideCosmetics(CosmeticUser.HiddenReason.WORLDGUARD);
+                user.removeCosmetics();
                 return;
             }
             if (protectedRegion.getFlags().containsKey(WGHook.getCosmeticWardrobeFlag())) {
@@ -76,7 +76,7 @@ public class WGListener implements Listener {
                     if (user.getHiddenReason() == CosmeticUser.HiddenReason.WORLDGUARD) user.showCosmetics();
                     return;
                 }
-                user.hideCosmetics(CosmeticUser.HiddenReason.WORLDGUARD);
+                user.removeCosmetics();
                 return;
             }
             if (protectedRegion.getFlags().containsKey(WGHook.getCosmeticWardrobeFlag())) {
