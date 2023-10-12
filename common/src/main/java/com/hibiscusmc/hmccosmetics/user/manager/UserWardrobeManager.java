@@ -303,6 +303,17 @@ public class UserWardrobeManager {
                     PacketManager.sendEntityDestroyPacket(user.getUserBackpackManager().getFirstArmorStandId(), outsideViewers);
                 }
 
+                if (user.hasCosmeticInSlot(CosmeticSlot.BALLOON)) {
+                    // The two lines below broke, solved by listening to PlayerCosmeticPostEquipEvent
+                    //PacketManager.sendTeleportPacket(user.getBalloonManager().getPufferfishBalloonId(), npcLocation.add(Settings.getBalloonOffset()), false, viewer);
+                    //user.getBalloonManager().getModelEntity().teleport(npcLocation.add(Settings.getBalloonOffset()));
+                    user.getBalloonManager().sendRemoveLeashPacket(outsideViewers);
+                    if (user.getBalloonManager().getBalloonType() != UserBalloonManager.BalloonType.MODELENGINE) {
+                        PacketManager.sendEntityDestroyPacket(user.getBalloonManager().getModelId(), outsideViewers);
+                    }
+                    user.getBalloonManager().sendLeashPacket(NPC_ID);
+                }
+
                 if (WardrobeSettings.isEquipPumpkin()) {
                     NMSHandlers.getHandler().equipmentSlotUpdate(user.getPlayer().getEntityId(), EquipmentSlot.HEAD, new ItemStack(Material.CARVED_PUMPKIN), viewer);
                 }
