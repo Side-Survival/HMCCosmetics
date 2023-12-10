@@ -10,7 +10,7 @@ import java.util.logging.Level;
 
 public class NMSHandlers {
 
-    private static final String[] SUPPORTED_VERSION = new String[]{"v1_20_R1", "v1_20_R2"};
+    private static final String[] SUPPORTED_VERSION = new String[]{"v1_20_R1", "v1_20_R2", "v1_20_R3"};
     private static NMSHandler handler;
     @Getter
     private static String version;
