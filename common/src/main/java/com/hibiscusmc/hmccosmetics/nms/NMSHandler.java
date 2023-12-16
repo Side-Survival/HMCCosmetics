@@ -8,8 +8,10 @@ import org.bukkit.Location;
 import org.bukkit.entity.ArmorStand;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
+import java.util.HashMap;
 import java.util.List;
 
 public interface NMSHandler {
@@ -33,6 +35,12 @@ public interface NMSHandler {
             int entityId,
             org.bukkit.inventory.EquipmentSlot slot,
             ItemStack item,
+            List<Player> sendTo
+    );
+
+    void equipmentSlotUpdate(
+            int entityId,
+            HashMap<EquipmentSlot, ItemStack> equipment,
             List<Player> sendTo
     );
 
