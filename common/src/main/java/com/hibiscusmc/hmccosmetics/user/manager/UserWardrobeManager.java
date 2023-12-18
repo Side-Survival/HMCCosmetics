@@ -117,6 +117,7 @@ public class UserWardrobeManager {
         Runnable run = () -> {
             // Player
             player.teleport(viewingLocation);
+            user.getPlayer().setInvisible(true);
 
             // NPC
             npcName = "WardrobeNPC-" + NPC_ID;
@@ -231,6 +232,9 @@ public class UserWardrobeManager {
             if (user.hasCosmeticInSlot(CosmeticSlot.BALLOON))
                 user.getBalloonManager().sendRemoveLeashPacket();
 
+            // Player
+            user.getPlayer().setInvisible(false);
+
             PacketManager.sendEntityDestroyPacket(NPC_ID, viewer); // Success
             PacketManager.sendRemovePlayerPacket(player, WARDROBE_UUID, viewer); // Success
 
@@ -296,7 +300,7 @@ public class UserWardrobeManager {
                     PacketManager.equipmentSlotUpdate(NPC_ID, user, slot, viewer);
                 }
 
-                if (user.hasCosmeticInSlot(CosmeticSlot.BACKPACK)) {
+                if (user.hasCosmeticInSlot(CosmeticSlot.BACKPACK) && user.getUserBackpackManager() != null) {
                     PacketManager.sendTeleportPacket(user.getUserBackpackManager().getFirstArmorStandId(), location, false, viewer);
                     PacketManager.ridingMountPacket(NPC_ID, user.getUserBackpackManager().getFirstArmorStandId(), viewer);
                     user.getUserBackpackManager().getEntityManager().setRotation(nextyaw);
