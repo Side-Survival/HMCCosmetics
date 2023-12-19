@@ -209,7 +209,7 @@ public class CosmeticUser {
 
         for (Cosmetic cosmetic : getCosmetics()) {
             if (cosmetic instanceof CosmeticArmorType armorType) {
-                if (getUserEmoteManager().isPlayingEmote()) return;
+                if (getUserEmoteManager().isPlayingEmote() || isInWardrobe()) return;
                 if (!Settings.isCosmeticForceOffhandCosmeticShow()
                         && armorType.getEquipSlot().equals(EquipmentSlot.OFF_HAND)
                         && !getPlayer().getInventory().getItemInOffHand().getType().isAir()) continue;
