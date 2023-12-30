@@ -5,7 +5,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = "SurvivalCosmetics"
+rootProject.name = "RealmsCosmetics"
 include(
     "common",
     "v1_20_R1",

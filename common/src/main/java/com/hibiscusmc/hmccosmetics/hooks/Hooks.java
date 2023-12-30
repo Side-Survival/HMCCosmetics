@@ -22,7 +22,7 @@ public class Hooks {
     private static final HookGeary GEARY_HOOK = new HookGeary();
     private static final HookMythic MYTHIC_HOOK = new HookMythic();
     private static final HookDenizen DENIZEN_HOOK = new HookDenizen();
-    private static final HookSurvivalCosmetics SURVIVAL_COSMETICS_HOOK = new HookSurvivalCosmetics();
+    private static final HookRealmsCosmetics SURVIVAL_COSMETICS_HOOK = new HookRealmsCosmetics();
     private static final HookPlaceholderAPI PAPI_HOOK = new HookPlaceholderAPI();
     private static final HookPremiumVanish PREMIUM_VANISH_HOOK = new HookPremiumVanish();
     private static final HookSuperVanish SUPER_VANISH_HOOK = new HookSuperVanish();

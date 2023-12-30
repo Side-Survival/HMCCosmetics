@@ -143,14 +143,14 @@ tasks {
         relocate("com.owen1212055.particlehelper", "com.hisbiscusmc.hmccosmetics.particlehelper")
         relocate("com.ticxo.playeranimator", "com.hisbiscusmc.hmccosmetics.playeranimator")
         relocate("com.bgsoftware", "com.hisbiscusmc.hmccosmetics.configupdater")
-        archiveFileName.set("SurvivalCosmetics-${project.version}.jar")
+        archiveFileName.set("RealmsCosmetics-${project.version}.jar")
 
         dependencies {
             exclude(dependency("org.yaml:snakeyaml"))
         }
 
         doLast {
-            archiveFile.get().asFile.copyTo(layout.projectDirectory.file("run/plugins/SurvivalCosmetics.jar").asFile, true)
+            archiveFile.get().asFile.copyTo(layout.projectDirectory.file("run/plugins/RealmsCosmetics.jar").asFile, true)
             println("If you use the plugin, consider buying it for: ")
             println("The custom resource pack, Oraxen + ItemAdder configurations, and Discord support!")
             println("Polymart: https://polymart.org/resource/1879")
