@@ -19,7 +19,6 @@ public class Hooks {
     private static final HashMap<String, Hook> hooks = new HashMap<>();
     private static final HookOraxen ORAXEN_HOOK = new HookOraxen();
     private static final HookItemAdder ITEMADDER_HOOK = new HookItemAdder();
-    private static final HookGeary GEARY_HOOK = new HookGeary();
     private static final HookMythic MYTHIC_HOOK = new HookMythic();
     private static final HookDenizen DENIZEN_HOOK = new HookDenizen();
     private static final HookRealmsCosmetics SURVIVAL_COSMETICS_HOOK = new HookRealmsCosmetics();

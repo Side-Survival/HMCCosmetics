@@ -1,5 +1,6 @@
 package com.hibiscusmc.hmccosmetics.util;
 
+import com.destroystokyo.paper.Title;
 import com.hibiscusmc.hmccosmetics.HMCCosmeticsPlugin;
 import com.hibiscusmc.hmccosmetics.config.Settings;
 import com.hibiscusmc.hmccosmetics.hooks.Hooks;
@@ -9,14 +10,12 @@ import net.kyori.adventure.audience.Audience;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
-import net.kyori.adventure.title.Title;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.configurate.ConfigurationNode;
 
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -93,13 +92,14 @@ public class MessagesUtil {
         sendTitle(player, message, 2000, 2000, 2000);
     }
 
-    public static void sendTitle(Player player, String message, int fadein, int stay, int fadeout) {
-        Audience target = BukkitAudiences.create(HMCCosmeticsPlugin.getInstance()).player(player);
-
-        Title.Times times = Title.Times.times(Duration.ofMillis(fadein), Duration.ofMillis(stay), Duration.ofMillis(fadeout));
-        Title title = Title.title(processStringNoKey(player, message), Component.empty(), times);
-
-        target.showTitle(title);
+    public static void sendTitle(Player player, String message, int fadeIn, int stay, int fadeOut) {
+        Title title = Title.builder()
+                .title(Adventure.SERIALIZER.serialize(Adventure.MINI_MESSAGE.deserialize(message)))
+                .fadeIn(fadeIn)
+                .stay(stay)
+                .fadeOut(fadeOut)
+                .build();
+        player.sendTitle(title);
     }
 
     public static Component processString(Player player, String key) {
