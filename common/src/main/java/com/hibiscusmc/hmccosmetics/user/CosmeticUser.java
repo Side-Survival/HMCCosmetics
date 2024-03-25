@@ -346,11 +346,19 @@ public class CosmeticUser {
     public void leaveWardrobe() {
         PlayerWardrobeLeaveEvent event = new PlayerWardrobeLeaveEvent(this);
         Bukkit.getPluginManager().callEvent(event);
-        if (event.isCancelled()) {
+        if (event.isCancelled())
+            return;
+
+        if (getWardrobeManager() == null) {
+            Player player = getPlayer();
+            if (player != null)
+                player.teleport(player.getWorld().getSpawnLocation());
             return;
         }
+
         MessagesUtil.sendDebugMessages("Leaving Wardrobe");
-        if (!getWardrobeManager().getWardrobeStatus().equals(UserWardrobeManager.WardrobeStatus.RUNNING)) return;
+        if (!getWardrobeManager().getWardrobeStatus().equals(UserWardrobeManager.WardrobeStatus.RUNNING))
+            return;
 
         getWardrobeManager().setWardrobeStatus(UserWardrobeManager.WardrobeStatus.STOPPING);
 

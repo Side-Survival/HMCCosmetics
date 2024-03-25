@@ -198,8 +198,6 @@ public class UserWardrobeManager {
         List<Player> viewer = Collections.singletonList(player);
 
         if (player != null) {
-            MessagesUtil.sendMessage(player, "closed-wardrobe");
-        } else {
             for (Player oPlayer : Bukkit.getOnlinePlayers()) {
                 if (player.canSee(oPlayer) || (!player.canSee(oPlayer) && oPlayer.canSee(player)))
                     continue;
@@ -214,6 +212,8 @@ public class UserWardrobeManager {
             if (player.hasPermission("cosmetics.admin")) {
                 player.sendMessage("You are no longer invisible, reapply your vanish!");
             }
+        } else {
+            return;
         }
 
         Runnable run = () -> {
