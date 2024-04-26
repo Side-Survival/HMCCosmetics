@@ -2,6 +2,7 @@ package com.hibiscusmc.hmccosmetics.user;
 
 import com.google.common.collect.HashBiMap;
 import com.hibiscusmc.hmccosmetics.util.ServerUtils;
+import lombok.Getter;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.Nullable;
@@ -12,6 +13,8 @@ import java.util.UUID;
 public class CosmeticUsers {
 
     private static HashBiMap<UUID, CosmeticUser> COSMETIC_USERS = HashBiMap.create();
+    @Getter
+    private static boolean globalHidden = false;
 
     public static void addUser(CosmeticUser user) {
         if (COSMETIC_USERS.containsKey(user.getUniqueId())) return; // do not add if already exists
@@ -46,5 +49,22 @@ public class CosmeticUsers {
 
     public static Set<CosmeticUser> values() {
         return COSMETIC_USERS.values();
+    }
+
+    public static void toggleGlobal() {
+        globalHidden = !globalHidden;
+
+        if (globalHidden) {
+            for (CosmeticUser cosmeticUser : COSMETIC_USERS.values()) {
+                cosmeticUser.hideCosmetics(CosmeticUser.HiddenReason.GLOBAL);
+            }
+        } else {
+            for (CosmeticUser cosmeticUser : COSMETIC_USERS.values()) {
+                if (!cosmeticUser.getHidden())
+                    continue;
+
+                cosmeticUser.showCosmetics();
+            }
+        }
     }
 }

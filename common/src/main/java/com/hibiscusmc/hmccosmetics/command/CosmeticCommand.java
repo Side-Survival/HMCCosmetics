@@ -491,6 +491,23 @@ public class CosmeticCommand implements CommandExecutor {
                 user.getUserEmoteManager().playEmote(args[1]);
                 return true;
             }
+
+            case ("globaltoggle") -> {
+                // /cosmetic globaltoggle
+                if (!sender.hasPermission("hmccosmetics.cmd.globaltoggle")) {
+                    if (!silent) MessagesUtil.sendMessage(sender, "no-permission");
+                    return true;
+                }
+
+                if (CosmeticUsers.isGlobalHidden()) {
+                    sender.sendMessage("Global cosmetics are now enabled again!");
+                } else {
+                    sender.sendMessage("Global cosmetics are now hidden!");
+                }
+
+                CosmeticUsers.toggleGlobal();
+                return true;
+            }
         }
         return true;
     }

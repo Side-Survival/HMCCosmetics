@@ -31,7 +31,7 @@ public class WGListener implements Listener {
         Location location = event.getPlayer().getLocation();
         ApplicableRegionSet set = getRegions(location);
         if (user.getHidden()) {
-            if (user.getHiddenReason() == CosmeticUser.HiddenReason.WORLDGUARD && set.getRegions().isEmpty()) {
+            if ((user.getHiddenReason() == CosmeticUser.HiddenReason.WORLDGUARD || user.getLastHiddenReason() == CosmeticUser.HiddenReason.WORLDGUARD) && set.getRegions().isEmpty()) {
                 user.showCosmetics();
             }
         }
@@ -41,7 +41,7 @@ public class WGListener implements Listener {
         for (ProtectedRegion protectedRegion : set.getRegions()) {
             if (protectedRegion.getFlags().containsKey(WGHook.getCosmeticEnableFlag())) {
                 if (protectedRegion.getFlags().get(WGHook.getCosmeticEnableFlag()).toString().equalsIgnoreCase("ALLOW")) {
-                    if (user.getHiddenReason() == CosmeticUser.HiddenReason.WORLDGUARD)
+                    if (user.getHiddenReason() == CosmeticUser.HiddenReason.WORLDGUARD || user.getHiddenReason() == CosmeticUser.HiddenReason.GLOBAL)
                         user.showCosmetics();
                     return;
                 }
@@ -67,14 +67,14 @@ public class WGListener implements Listener {
         Location location = event.getTo();
         ApplicableRegionSet set = getRegions(location);
         if (user.getHidden()) {
-            if (user.getHiddenReason() == CosmeticUser.HiddenReason.WORLDGUARD && set.getRegions().isEmpty()) {
+            if ((user.getHiddenReason() == CosmeticUser.HiddenReason.WORLDGUARD || user.getLastHiddenReason() == CosmeticUser.HiddenReason.WORLDGUARD) && set.getRegions().isEmpty()) {
                 user.showCosmetics();
             }
         }
         for (ProtectedRegion protectedRegion : set.getRegions()) {
             if (protectedRegion.getFlags().containsKey(WGHook.getCosmeticEnableFlag())) {
                 if (protectedRegion.getFlags().get(WGHook.getCosmeticEnableFlag()).toString().equalsIgnoreCase("ALLOW")) {
-                    if (user.getHiddenReason() == CosmeticUser.HiddenReason.WORLDGUARD)
+                    if (user.getHiddenReason() == CosmeticUser.HiddenReason.WORLDGUARD || user.getHiddenReason() == CosmeticUser.HiddenReason.GLOBAL)
                         user.showCosmetics();
                     return;
                 }

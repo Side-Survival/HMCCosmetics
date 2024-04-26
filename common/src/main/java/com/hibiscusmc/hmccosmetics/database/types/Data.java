@@ -69,7 +69,9 @@ public abstract class Data {
                 if (EnumUtils.isValidEnum(CosmeticUser.HiddenReason.class, splitData[1])) {
                     if (Settings.isForceShowOnJoin()) continue;
                     Bukkit.getScheduler().runTask(HMCCosmeticsPlugin.getInstance(), () -> {
-                        user.hideCosmetics(CosmeticUser.HiddenReason.valueOf(splitData[1]));
+                        CosmeticUser.HiddenReason hiddenReason = CosmeticUser.HiddenReason.valueOf(splitData[1]);
+                        if (hiddenReason != CosmeticUser.HiddenReason.GLOBAL)
+                            user.hideCosmetics(hiddenReason);
                     });
                 }
                 continue;

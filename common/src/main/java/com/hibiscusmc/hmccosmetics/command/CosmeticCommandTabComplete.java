@@ -44,6 +44,7 @@ public class CosmeticCommandTabComplete implements TabCompleter {
             if (hasPermission(sender, "hmccosmetics.cmd.debug")) completions.add("debug");
             if (hasPermission(sender, "hmccosmetics.cmd.emote")) completions.add("emote");
             if (hasPermission(sender, "hmccosmetics.cmd.playemote")) completions.add("playemote");
+            if (hasPermission(sender, "hmccosmetics.cmd.globaltoggle")) completions.add("globaltoggle");
 
             StringUtil.copyPartialMatches(args[0], completions, finalCompletions);
         }

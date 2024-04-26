@@ -56,6 +56,8 @@ public class CosmeticUser {
     private boolean hideCosmetics;
     @Getter
     private HiddenReason hiddenReason;
+    @Getter
+    private HiddenReason lastHiddenReason = HiddenReason.NONE;
     private final HashMap<CosmeticSlot, Color> colors = new HashMap<>();
 
     public CosmeticUser(UUID uuid) {
@@ -504,7 +506,18 @@ public class CosmeticUser {
     }
 
     public void hideCosmetics(HiddenReason reason) {
-        if (hideCosmetics) return;
+        if (hideCosmetics) {
+            if (hiddenReason == reason)
+                return;
+
+            if (reason == HiddenReason.GLOBAL) {
+                lastHiddenReason = hiddenReason;
+                hiddenReason = reason;
+            } else if (hiddenReason == HiddenReason.GLOBAL) {
+                lastHiddenReason = reason;
+            }
+            return;
+        }
         PlayerCosmeticHideEvent event = new PlayerCosmeticHideEvent(this, reason);
         Bukkit.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
@@ -530,6 +543,16 @@ public class CosmeticUser {
         PlayerCosmeticShowEvent event = new PlayerCosmeticShowEvent(this);
         Bukkit.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
+            return;
+        }
+
+        // If player is hidden with global reason
+        //   1. Check if the global hide is still active. If it is, remove the last hidden reason
+        //   2. If the global hide is inactive, then the hidden reason should be set back to the old one
+        if (hiddenReason == HiddenReason.GLOBAL && lastHiddenReason != HiddenReason.NONE) {
+            if (!CosmeticUsers.isGlobalHidden())
+                hiddenReason = lastHiddenReason;
+            lastHiddenReason = HiddenReason.NONE;
             return;
         }
 
@@ -561,6 +584,7 @@ public class CosmeticUser {
         POTION,
         ACTION,
         COMMAND,
-        EMOTE
+        EMOTE,
+        GLOBAL
     }
 }
