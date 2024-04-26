@@ -206,6 +206,10 @@ public class CosmeticUser {
     }
 
     private void bulkUpdateCosmetic() {
+        Entity entity = getEntity();
+        if (entity == null)
+            return;
+
         MessagesUtil.sendDebugMessages("bulkUpdateCosmetic - start");
         HashMap<EquipmentSlot, ItemStack> items = new HashMap<>();
 
@@ -221,7 +225,7 @@ public class CosmeticUser {
             updateCosmetic(cosmetic.getSlot());
         }
         if (items.isEmpty()) return;
-        NMSHandlers.getHandler().equipmentSlotUpdate(getEntity().getEntityId(), items, PlayerUtils.getNearbyPlayers(getEntity().getLocation()));
+        NMSHandlers.getHandler().equipmentSlotUpdate(entity.getEntityId(), items, PlayerUtils.getNearbyPlayers(entity.getLocation()));
         MessagesUtil.sendDebugMessages("bulkUpdateCosmetic - end - " + items.size());
     }
 
