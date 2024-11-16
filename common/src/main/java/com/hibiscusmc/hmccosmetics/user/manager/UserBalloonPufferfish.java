@@ -4,6 +4,7 @@ import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUsers;
 import com.hibiscusmc.hmccosmetics.util.HMCCPlayerUtils;
 import com.hibiscusmc.hmccosmetics.util.packets.HMCCPacketManager;
+import lombok.Getter;
 import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -14,21 +15,16 @@ import java.util.UUID;
 
 public class UserBalloonPufferfish extends UserEntity {
 
-    private int pufferFishEntityId;
-    private UUID uuid;
+    @Getter
+    private final int pufferFishEntityId;
+    @Getter
+    private final UUID uuid;
+    private boolean destroyed = false;
 
     public UserBalloonPufferfish(UUID owner, int pufferFishEntityId, UUID uuid) {
         super(owner);
         this.pufferFishEntityId = pufferFishEntityId;
         this.uuid = uuid;
-    }
-
-    public int getPufferFishEntityId() {
-        return pufferFishEntityId;
-    }
-
-    public UUID getUuid() {
-        return uuid;
     }
 
     public void hidePufferfish() {
@@ -41,8 +37,15 @@ public class UserBalloonPufferfish extends UserEntity {
         HMCCPacketManager.sendInvisibilityPacket(pufferFishEntityId, sendTo);
     }
 
+    public void destroyPufferfish() {
+        HMCCPacketManager.sendEntityDestroyPacket(pufferFishEntityId, getViewers());
+        getViewers().clear();
+        destroyed = true;
+    }
+
     @Override
     public List<Player> refreshViewers(Location location) {
+        if (destroyed) return List.of(); //Prevents refreshing a destroyed entity
         if (System.currentTimeMillis() - getViewerLastUpdate() <= 1000) return List.of(); //Prevents mass refreshes
         ArrayList<Player> newPlayers = new ArrayList<>();
         ArrayList<Player> removePlayers = new ArrayList<>();

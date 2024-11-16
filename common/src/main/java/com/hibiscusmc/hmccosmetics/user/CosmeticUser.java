@@ -487,10 +487,6 @@ public class CosmeticUser {
 
     public void despawnBalloon() {
         if (this.userBalloonManager == null) return;
-        List<Player> sentTo = HMCCPlayerUtils.getNearbyPlayers(getEntity().getLocation());
-
-        HMCCPacketManager.sendEntityDestroyPacket(userBalloonManager.getPufferfishBalloonId(), sentTo);
-
         this.userBalloonManager.remove();
         this.userBalloonManager = null;
     }
