@@ -13,6 +13,7 @@ import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticArmorType;
 import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticBackpackType;
 import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticBalloonType;
 import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticMainhandType;
+import com.hibiscusmc.hmccosmetics.database.UserData;
 import com.hibiscusmc.hmccosmetics.gui.Menus;
 import com.hibiscusmc.hmccosmetics.user.manager.UserBackpackManager;
 import com.hibiscusmc.hmccosmetics.user.manager.UserBalloonManager;
@@ -69,6 +70,13 @@ public class CosmeticUser {
         tick();
     }
 
+    public CosmeticUser(UUID uuid, UserData data) {
+        this.uniqueId = uuid;
+        userEmoteManager = new UserEmoteManager(this);
+        loadData(data);
+        tick();
+    }
+
     private void tick() {
         // Occasionally updates the entity cosmetics
         Runnable run = () -> {
@@ -90,6 +98,54 @@ public class CosmeticUser {
         despawnBalloon();
     }
 
+    public void loadData(@NotNull UserData data) {
+        boolean permissionCheck = Settings.isForcePermissionJoin();
+
+        for (Map.Entry<CosmeticSlot, Map.Entry<Cosmetic, Integer>> entry : data.getCosmetics().entrySet()) {
+            Cosmetic cosmetic = entry.getValue().getKey();
+            Color color = entry.getValue().getValue() == -1 ? null : Color.fromRGB(entry.getValue().getValue());
+
+            if (permissionCheck && cosmetic.requiresPermission()) {
+                if (getPlayer() != null && !getPlayer().hasPermission(cosmetic.getPermission())) {
+                    continue;
+                }
+            }
+            addPlayerCosmetic(cosmetic, color);
+        }
+
+        if (!hiddenReason.isEmpty()) {
+            for (CosmeticUser.HiddenReason reason : hiddenReason) silentlyAddHideFlag(reason);
+        } else {
+            for (HiddenReason reason : data.getHiddenReasons()) {
+                if (getPlayer() != null && Settings.isDisabledGamemodesEnabled() && Settings.getDisabledGamemodes().contains(getPlayer().getGameMode().toString())) {
+                    MessagesUtil.sendDebugMessages("Hiding Cosmetics due to gamemode");
+                    hideCosmetics(CosmeticUser.HiddenReason.GAMEMODE);
+                    return;
+                } else {
+                    if (isHidden(CosmeticUser.HiddenReason.GAMEMODE)) {
+                        MessagesUtil.sendDebugMessages("Join Gamemode Check: Showing Cosmetics");
+                        showCosmetics(CosmeticUser.HiddenReason.GAMEMODE);
+                        return;
+                    }
+                }
+                // Handle world check
+                if (getPlayer() != null && Settings.getDisabledWorlds().contains(getPlayer().getWorld().getName())) {
+                    MessagesUtil.sendDebugMessages("Hiding Cosmetics due to world");
+                    hideCosmetics(CosmeticUser.HiddenReason.WORLD);
+                } else {
+                    if (isHidden(CosmeticUser.HiddenReason.WORLD)) {
+                        MessagesUtil.sendDebugMessages("Join World Check: Showing Cosmetics");
+                        showCosmetics(CosmeticUser.HiddenReason.WORLD);
+                    }
+                }
+                if (Settings.isAllPlayersHidden()) {
+                    hideCosmetics(CosmeticUser.HiddenReason.DISABLED);
+                }
+                silentlyAddHideFlag(reason);
+            }
+        }
+    }
+
     public Cosmetic getCosmetic(CosmeticSlot slot) {
         return playerCosmetics.get(slot);
     }
@@ -98,11 +154,11 @@ public class CosmeticUser {
         return ImmutableList.copyOf(playerCosmetics.values());
     }
 
-    public void addPlayerCosmetic(Cosmetic cosmetic) {
+    public void addPlayerCosmetic(@NotNull Cosmetic cosmetic) {
         addPlayerCosmetic(cosmetic, null);
     }
 
-    public void addPlayerCosmetic(Cosmetic cosmetic, Color color) {
+    public void addPlayerCosmetic(@NotNull Cosmetic cosmetic, @Nullable Color color) {
         // API
         PlayerCosmeticEquipEvent event = new PlayerCosmeticEquipEvent(this, cosmetic);
         Bukkit.getPluginManager().callEvent(event);
