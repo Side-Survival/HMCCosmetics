@@ -40,7 +40,7 @@ public class UserBalloonManager {
     private final ArmorStand modelEntity;
     public UserBalloonManager(CosmeticUser user, @NotNull Location location) {
         this.user = user;
-        this.pufferfish = new UserBalloonPufferfish(user.getUniqueId(), NMSHandlers.getHandler().getNextEntityId(), UUID.randomUUID());
+        this.pufferfish = new UserBalloonPufferfish(user.getUniqueId(), NMSHandlers.getHandler().getUtilHandler().getNextEntityId(), UUID.randomUUID());
         this.modelEntity = location.getWorld().spawn(location, ArmorStand.class, (e) -> {
             e.setInvisible(true);
             e.setGravity(false);

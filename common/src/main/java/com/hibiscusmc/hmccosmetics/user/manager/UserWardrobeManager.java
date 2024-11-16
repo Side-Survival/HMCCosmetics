@@ -129,7 +129,7 @@ public class UserWardrobeManager {
                 HMCCPacketManager.sendFakePlayerSpawnPacket(npcLocation, WARDROBE_UUID, NPC_ID, viewer);
                 HMCCPacketManager.sendPlayerOverlayPacket(NPC_ID, viewer);
                 MessagesUtil.sendDebugMessages("Spawned Fake Player on " + npcLocation);
-                NMSHandlers.getHandler().hideNPCName(player, npcName);
+                NMSHandlers.getHandler().getPacketHandler().sendScoreboardHideNamePacket(player, npcName);
             }, 4);
 
             // Location
