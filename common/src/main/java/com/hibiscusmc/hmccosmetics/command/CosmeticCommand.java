@@ -342,7 +342,7 @@ public class CosmeticCommand implements CommandExecutor {
                 }
                 Wardrobe wardrobe = WardrobeSettings.getWardrobe(args[1]);
                 if (wardrobe == null) {
-                    wardrobe = new Wardrobe(args[1], new WardrobeLocation(null, null, null), null, -1);
+                    wardrobe = new Wardrobe(args[1], new WardrobeLocation(null, null, null), null, -1, null);
                     WardrobeSettings.addWardrobe(wardrobe);
                     //MessagesUtil.sendMessage(player, "no-wardrobes");
                     //return true;

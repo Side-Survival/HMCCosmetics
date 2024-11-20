@@ -83,8 +83,11 @@ public class UserWardrobeManager {
         this.viewingLocation = wardrobeLocation.getViewerLocation();
         this.npcLocation = wardrobeLocation.getNpcLocation();
 
+        String defaultMenu = wardrobe.getDefaultMenu();
+        if (defaultMenu != null && Menus.hasMenu(defaultMenu)) this.lastOpenMenu = Menus.getMenu(defaultMenu);
+        else this.lastOpenMenu = Menus.getDefaultMenu();
+
         wardrobeStatus = WardrobeStatus.SETUP;
-        this.lastOpenMenu = Menus.getDefaultMenu();
     }
 
     public void start() {
