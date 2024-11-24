@@ -38,6 +38,7 @@ public class Settings {
     private static final String EMOTE_DISTANCE_PATH = "emote-distance";
     private static final String HOOK_SETTING_PATH = "hook-settings";
     private static final String HOOK_ITEMADDER_PATH = "itemsadder";
+    private static final String HOOK_NEXO_PATH = "nexo";
     private static final String HOOK_RELOAD_CHANGE_PATH = "reload-on-change";
     private static final String HOOK_WORLDGUARD_PATH = "worldguard";
     private static final String HOOK_WG_MOVE_CHECK_PATH = "player-move-check";
@@ -96,6 +97,8 @@ public class Settings {
     private static boolean itemProcessingLore;
     @Getter
     private static boolean itemsAdderChangeReload;
+    @Getter
+    private static boolean nexoChangeReload;
     @Getter
     private static boolean worldGuardMoveCheck;
     @Getter
@@ -257,8 +260,12 @@ public class Settings {
         dyeMenuOutputSlot = dyeMenuSettings.node(DYE_MENU_OUTPUT_SLOT).getInt(25);
 
         ConfigurationNode hookSettings = source.node(HOOK_SETTING_PATH);
+
         ConfigurationNode itemsAdderSettings = hookSettings.node(HOOK_ITEMADDER_PATH);
         itemsAdderChangeReload = itemsAdderSettings.node(HOOK_RELOAD_CHANGE_PATH).getBoolean(false);
+
+        ConfigurationNode nexoSettings = hookSettings.node(HOOK_NEXO_PATH);
+        nexoChangeReload = nexoSettings.node(HOOK_RELOAD_CHANGE_PATH).getBoolean(true);
 
         ConfigurationNode worldGuardSettings = hookSettings.node(HOOK_WORLDGUARD_PATH);
         worldGuardMoveCheck = worldGuardSettings.node(HOOK_WG_MOVE_CHECK_PATH).getBoolean(true);

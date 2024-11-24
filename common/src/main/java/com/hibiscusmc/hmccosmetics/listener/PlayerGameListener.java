@@ -29,7 +29,9 @@ import com.hibiscusmc.hmccosmetics.util.HMCCServerUtils;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import com.hibiscusmc.hmccosmetics.util.packets.HMCCPacketManager;
 import me.lojosho.hibiscuscommons.api.events.*;
+import me.lojosho.hibiscuscommons.hooks.Hook;
 import me.lojosho.hibiscuscommons.hooks.items.HookItemAdder;
+import me.lojosho.hibiscuscommons.hooks.items.HookNexo;
 import me.lojosho.hibiscuscommons.util.packets.PacketManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -431,21 +433,6 @@ public class PlayerGameListener implements Listener {
         user.showCosmetics(CosmeticUser.HiddenReason.PLUGIN);
     }
 
-    @EventHandler(priority = EventPriority.MONITOR, ignoreCancelled = true)
-    public void onHookReload(HibiscusHookReload event) {
-        if (event.getHook() instanceof HookItemAdder hook) {
-            switch (event.getReloadType()) {
-                case INITIAL -> {
-                    HMCCosmeticsPlugin.setup();
-                }
-                case RELOAD -> {
-                    if (!Settings.isItemsAdderChangeReload()) return;
-                    HMCCosmeticsPlugin.setup();
-                }
-            }
-        }
-    }
-
     // These emote mostly handles emotes from other plugins, such as ItemsAdder
     @EventHandler(priority = EventPriority.LOW, ignoreCancelled = true)
     public void onPlayerPlayEmote(HibiscusPlayerEmotePlayEvent event) {
@@ -770,10 +757,6 @@ public class PlayerGameListener implements Listener {
             }
         });
     }
-
-
-
-
 
     @Nullable
     private EquipmentSlot getArmorSlot(final Material material) {
