@@ -25,6 +25,7 @@ import com.hibiscusmc.hmccosmetics.user.CosmeticUsers;
 import com.hibiscusmc.hmccosmetics.user.manager.UserEmoteManager;
 import com.hibiscusmc.hmccosmetics.user.manager.UserWardrobeManager;
 import com.hibiscusmc.hmccosmetics.util.HMCCInventoryUtils;
+import com.hibiscusmc.hmccosmetics.util.HMCCServerUtils;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import com.hibiscusmc.hmccosmetics.util.packets.HMCCPacketManager;
 import me.lojosho.hibiscuscommons.api.events.*;
@@ -66,6 +67,7 @@ public class PlayerGameListener implements Listener {
         registerPlayerArmListener();
         registerEntityUseListener();
         registerSlotChangeListener();
+        registerPassengerSetListener();
 
         //registerLookMovement();
         //registerMoveListener();
@@ -647,6 +649,35 @@ public class PlayerGameListener implements Listener {
                 }
                 if (!user.hasCosmeticInSlot(CosmeticSlot.OFFHAND)) return;
                 event.setCancelled(true);
+            }
+        });
+    }
+
+    private void registerPassengerSetListener() {
+        ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(HMCCosmeticsPlugin.getInstance(), ListenerPriority.NORMAL, PacketType.Play.Server.MOUNT) {
+            @Override
+            public void onPacketSending(PacketEvent event) {
+                MessagesUtil.sendDebugMessages("Mount Packet Sent - Begin");
+
+                int ownerId = event.getPacket().getIntegers().read(0);
+                MessagesUtil.sendDebugMessages("Mount Packet Sent - " + ownerId);
+                Entity entity = HMCCServerUtils.getEntity(ownerId);
+                if (entity == null) return;
+
+                CosmeticUser user = CosmeticUsers.getUser(entity.getUniqueId());
+                if (user == null) return;
+                MessagesUtil.sendDebugMessages("Mount Packet Sent - " + user.getUniqueId());
+
+                if (user.isInWardrobe()) return;
+                if (!user.hasCosmeticInSlot(CosmeticSlot.BACKPACK) && user.getUserBackpackManager() != null) return;
+
+                // Basically, take the original passengers and "bump" them to the end of the list
+                int[] originalPassengers = event.getPacket().getIntegerArrays().read(0);
+                List<Integer> passengers = new ArrayList<>(user.getUserBackpackManager().getEntityManager().getIds());
+
+                passengers.addAll(Arrays.stream(originalPassengers).boxed().toList());
+
+                event.getPacket().getIntegerArrays().write(0, passengers.stream().mapToInt(Integer::intValue).toArray());
             }
         });
     }
