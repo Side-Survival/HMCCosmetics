@@ -656,7 +656,8 @@ public class PlayerGameListener implements Listener {
                 MessagesUtil.sendDebugMessages("Mount Packet Sent - " + user.getUniqueId());
 
                 if (user.isInWardrobe()) return;
-                if (!user.hasCosmeticInSlot(CosmeticSlot.BACKPACK) && user.getUserBackpackManager() != null) return;
+                if (!user.hasCosmeticInSlot(CosmeticSlot.BACKPACK)) return;
+                if (user.getUserBackpackManager() == null) return;
 
                 // Basically, take the original passengers and "bump" them to the end of the list
                 int[] originalPassengers = event.getPacket().getIntegerArrays().read(0);
