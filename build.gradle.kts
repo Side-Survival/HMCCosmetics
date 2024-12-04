@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.hibiscusmc"
-version = "2.7.4-DEV"
+version = "2.7.4-DEV-${getGitCommitHash()}"
 
 allprojects {
     apply(plugin = "java")
@@ -262,4 +262,16 @@ bukkit {
 java {
     toolchain.languageVersion.set(JavaLanguageVersion.of(21
     ))
+}
+
+fun getGitCommitHash(): String {
+    return try {
+        val process = ProcessBuilder("git", "rev-parse", "--short", "HEAD")
+            .redirectErrorStream(true)
+            .start()
+
+        process.inputStream.bufferedReader().use { it.readLine().trim() }
+    } catch (e: Exception) {
+        "unknown" // Fallback if Git is not available or an error occurs
+    }
 }
