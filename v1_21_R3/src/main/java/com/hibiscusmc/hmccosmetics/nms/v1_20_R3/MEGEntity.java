@@ -1,4 +1,4 @@
-package com.hibiscusmc.hmccosmetics.nms.v1_20_R1;
+package com.hibiscusmc.hmccosmetics.nms.v1_20_R3;
 
 import com.hibiscusmc.hmccosmetics.HMCCosmeticsPlugin;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
@@ -6,7 +6,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.decoration.ArmorStand;
 import org.bukkit.Location;
 import org.bukkit.NamespacedKey;
-import org.bukkit.craftbukkit.v1_20_R1.CraftWorld;
+import org.bukkit.craftbukkit.CraftWorld;
 import org.bukkit.persistence.PersistentDataType;
 
 public class MEGEntity extends ArmorStand {

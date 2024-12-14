@@ -335,7 +335,7 @@ public class PacketManager extends BasePacket {
             final int entityId,
             final @NotNull List<Player> sendTo
     ) {
-        if (NMSHandlers.getVersion().contains("v1_18_R2") || NMSHandlers.getVersion().contains("v1_19_R1") || NMSHandlers.getVersion().contains("v1_19_R2") || NMSHandlers.getVersion().contains("v1_19_R3") || NMSHandlers.getVersion().contains("v1_20_R1")) {
+        if (NMSHandlers.getVersion().contains("v1_18_R2") || NMSHandlers.getVersion().contains("v1_19_R1") || NMSHandlers.getVersion().contains("v1_19_R2") || NMSHandlers.getVersion().contains("v1_19_R3") || NMSHandlers.getVersion().contains("v1_21_R3")) {
             WrapperPlayServerNamedEntitySpawn wrapper = new WrapperPlayServerNamedEntitySpawn();
             wrapper.setEntityID(entityId);
             wrapper.setPlayerUUID(uuid);

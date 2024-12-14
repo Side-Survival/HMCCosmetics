@@ -8,21 +8,19 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
     compileOnly("org.jetbrains:annotations:23.0.0")
     compileOnly("com.comphenix.protocol:ProtocolLib:5.1.0")
-    compileOnly("me.clip:placeholderapi:2.11.3")
+    compileOnly("me.clip:placeholderapi:2.11.6")
     compileOnly("com.ticxo.modelengine:ModelEngine:R4.0.2")
     compileOnly("com.github.oraxen:oraxen:1.160.0")
     compileOnly("com.github.LoneDev6:API-ItemsAdder:3.2.5")
     compileOnly("com.mineinabyss:geary-papermc:0.24-SNAPSHOT")
     //compileOnly("com.hibiscus:hmccolor:0.3-SNAPSHOT") USE LIB PROVIDED FILE
-    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.1.0-SNAPSHOT")
+    compileOnly(files("../depend/worldguard-bukkit-7.0.11-beta1-dist.jar"))
+    compileOnly(files("../depend/worldedit-bukkit-7.3.9.jar"))
     compileOnly("it.unimi.dsi:fastutil:8.5.11")
     compileOnly("io.lumine:Mythic-Dist:5.2.1")
     compileOnly("com.denizenscript:denizen:1.2.7-SNAPSHOT")
     compileOnly("com.github.LeonMangler:SuperVanish:6.2.17")
     compileOnly("net.Indyuce:MMOItems-API:6.9.4-SNAPSHOT")
-    compileOnlyApi("LibsDisguises:LibsDisguises:10.0.21") {
-        exclude("org.spigotmc", "spigot")
-    }
 
     //compileOnly("com.github.Fisher2911:FisherLib:master-SNAPSHOT")
     implementation("net.kyori:adventure-api:4.12.0")
@@ -31,7 +29,6 @@ dependencies {
     implementation("dev.triumphteam:triumph-gui:3.1.3")
     implementation("org.spongepowered:configurate-yaml:4.1.2")
     implementation("org.bstats:bstats-bukkit:3.0.0")
-    implementation("com.jeff_media:SpigotUpdateChecker:3.0.0")
     implementation("com.owen1212055:particlehelper:1.0.0-SNAPSHOT")
     implementation("com.ticxo.playeranimator:PlayerAnimator:R1.2.7")
     implementation("com.github.BG-Software-LLC:CommentedConfiguration:-SNAPSHOT")
@@ -39,7 +36,7 @@ dependencies {
 }
 
 java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(17
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21
     ))
 }
 

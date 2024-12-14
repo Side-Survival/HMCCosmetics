@@ -30,7 +30,7 @@ allprojects {
         maven("https://repo.mineinabyss.com/snapshots/")
 
         // PlaceholderAPI
-        maven("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+        maven("https://repo.extendedclip.com/releases/")
 
         //Hikari
         maven("https://mvnrepository.com/artifact/com.zaxxer/HikariCP")
@@ -52,9 +52,6 @@ allprojects {
             }
         }
 
-        // UpdateChecker
-        maven("https://hub.jeff-media.com/nexus/repository/jeff-media-public/")
-
         // ParticleHelper
         maven("https://repo.bytecode.space/repository/maven-public/")
 
@@ -74,12 +71,12 @@ allprojects {
         compileOnly("io.papermc.paper:paper-api:1.20.4-R0.1-SNAPSHOT")
         compileOnly("org.jetbrains:annotations:23.0.0")
         compileOnly("com.comphenix.protocol:ProtocolLib:5.1.0")
-        compileOnly("me.clip:placeholderapi:2.11.3")
+        compileOnly("me.clip:placeholderapi:2.11.6")
         compileOnly("com.ticxo.modelengine:ModelEngine:R4.0.2")
         compileOnly("com.github.oraxen:oraxen:1.160.0")
         compileOnly("com.github.LoneDev6:API-ItemsAdder:3.2.5")
         compileOnly("com.mineinabyss:geary-papermc:0.25-SNAPSHOT")
-        compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.1.0-SNAPSHOT")
+        compileOnly(files("depend/worldguard-bukkit-7.0.11-beta1-dist.jar"))
         compileOnly("it.unimi.dsi:fastutil:8.5.11")
         compileOnly("com.github.LeonMangler:SuperVanish:6.2.17")
         compileOnly("org.projectlombok:lombok:1.18.2")
@@ -92,9 +89,7 @@ allprojects {
 
 dependencies {
     implementation(project(path = ":common"))
-    implementation(project(path = ":v1_20_R1", configuration = "reobf"))
-    implementation(project(path = ":v1_20_R2", configuration = "reobf"))
-    implementation(project(path = ":v1_20_R3", configuration = "reobf"))
+    implementation(project(path = ":v1_21_R3", configuration = "reobf"))
 
     //compileOnly("com.github.Fisher2911:FisherLib:master-SNAPSHOT")
     implementation("net.kyori:adventure-api:4.11.0")
@@ -103,7 +98,6 @@ dependencies {
     implementation("dev.triumphteam:triumph-gui:3.1.3")
     implementation("org.spongepowered:configurate-yaml:4.1.2")
     implementation("org.bstats:bstats-bukkit:3.0.0")
-    implementation("com.jeff_media:SpigotUpdateChecker:3.0.0")
     implementation("com.owen1212055:particlehelper:1.0.0-SNAPSHOT")
     implementation("com.ticxo.playeranimator:PlayerAnimator:R1.2.7")
     implementation("com.github.BG-Software-LLC:CommentedConfiguration:-SNAPSHOT")
@@ -114,7 +108,7 @@ tasks {
 
     compileJava {
         options.encoding = Charsets.UTF_8.name()
-        options.release.set(17)
+        options.release.set(21)
     }
 
     javadoc {
@@ -131,9 +125,7 @@ tasks {
     }
 
     shadowJar {
-        dependsOn(":v1_20_R1:reobfJar")
-        dependsOn(":v1_20_R2:reobfJar")
-        dependsOn(":v1_20_R3:reobfJar")
+        dependsOn(":v1_21_R3:reobfJar")
         mergeServiceFiles()
 
         relocate("dev.triumphteam.gui", "com.hisbiscusmc.hmccosmetics.gui")
@@ -174,7 +166,7 @@ bukkit {
     apiVersion = "1.20"
     authors = listOf("LoJoSho")
     depend = listOf("ProtocolLib")
-    softDepend = listOf("ModelEngine", "Oraxen", "ItemsAdder", "Geary", "HMCColor", "WorldGuard", "MythicMobs", "PlaceholderAPI", "SuperVanish", "PremiumVanish", "LibsDisguises", "Denizen", "MMOItems")
+    softDepend = listOf("ModelEngine", "Oraxen", "ItemsAdder", "Geary", "HMCColor", "WorldGuard", "MythicMobs", "PlaceholderAPI", "SuperVanish", "PremiumVanish", "Denizen", "MMOItems")
     version = "${project.version}"
     loadBefore = listOf(
         "Cosmin" // Fixes an issue with Cosmin loading before and taking /cosmetic, when messing with what we do.
@@ -263,6 +255,6 @@ bukkit {
 }
 
 java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(17
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21
     ))
 }

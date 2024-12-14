@@ -27,7 +27,6 @@ public class Hooks {
     private static final HookSuperVanish SUPER_VANISH_HOOK = new HookSuperVanish();
     private static final HookHMCColor HMC_COLOR_HOOK = new HookHMCColor();
     private static final HookCMI CMI_HOOK = new HookCMI();
-    private static final HookLibsDisguises LIBS_DISGUISES_HOOK = new HookLibsDisguises();
     private static final HookModelEngine MODEL_ENGINE_HOOK = new HookModelEngine();
     private static final HookMMOItems MMO_ITEMS_HOOK = new HookMMOItems();
 
