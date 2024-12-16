@@ -644,10 +644,12 @@ public class PlayerGameListener implements Listener {
         ProtocolLibrary.getProtocolManager().addPacketListener(new PacketAdapter(HMCCosmeticsPlugin.getInstance(), ListenerPriority.NORMAL, PacketType.Play.Server.MOUNT) {
             @Override
             public void onPacketSending(PacketEvent event) {
-                MessagesUtil.sendDebugMessages("Mount Packet Sent - Begin");
+                CosmeticUser viewerUser = CosmeticUsers.getUser(event.getPlayer().getUniqueId());
+                if (viewerUser == null) return;
+                if (viewerUser.isInWardrobe()) return;
 
                 int ownerId = event.getPacket().getIntegers().read(0);
-                MessagesUtil.sendDebugMessages("Mount Packet Sent - " + ownerId);
+                MessagesUtil.sendDebugMessages("Mount Packet Sent - Read - EntityID: " + ownerId);
                 Entity entity = HMCCServerUtils.getEntity(ownerId);
                 if (entity == null) return;
 
@@ -655,7 +657,6 @@ public class PlayerGameListener implements Listener {
                 if (user == null) return;
                 MessagesUtil.sendDebugMessages("Mount Packet Sent - " + user.getUniqueId());
 
-                if (user.isInWardrobe()) return;
                 if (!user.hasCosmeticInSlot(CosmeticSlot.BACKPACK)) return;
                 if (user.getUserBackpackManager() == null) return;
 
