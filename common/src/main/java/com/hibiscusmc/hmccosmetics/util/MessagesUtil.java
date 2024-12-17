@@ -17,13 +17,16 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Level;
 
 public class MessagesUtil {
 
     private static String prefix;
     private static final HashMap<String, String> MESSAGES = new HashMap<>();
+    private static final HashMap<String, List<String>> LIST_MESSAGES = new HashMap<>();
 
     public static void setup(@NotNull ConfigurationNode config) {
         MESSAGES.clear();
@@ -32,6 +35,12 @@ public class MessagesUtil {
         for (ConfigurationNode node : config.childrenMap().values()) {
             if (node.virtual()) continue;
             if (node.empty()) continue;
+            if (node.isList()) {
+                try {
+                    LIST_MESSAGES.put(node.key().toString(), node.getList(String.class));
+                } catch (Exception ignored) {}
+                continue;
+            }
             MESSAGES.put(node.key().toString(), node.getString());
         }
      }
@@ -95,6 +104,10 @@ public class MessagesUtil {
 
     public static Component processString(Player player, String key) {
         return processString(player, key, null);
+    }
+
+    public static List<String> getListString(String key) {
+        return LIST_MESSAGES.getOrDefault(key, new ArrayList<>());
     }
 
     @Nullable

@@ -32,7 +32,7 @@ public class HMCPlaceholderExpansion extends PlaceholderExpansion {
     @Override
     @NotNull
     public String getIdentifier() {
-        return "RealmsCosmetics";
+        return "HMCCosmetics";
     }
 
     @Override
@@ -121,11 +121,6 @@ public class HMCPlaceholderExpansion extends PlaceholderExpansion {
             case "equipped":
                 if (placeholderArgs.size() >= 2) {
                     String args1 = placeholderArgs.get(1);
-
-                    if (EnumUtils.isValidEnum(CosmeticSlot.class, args1.toUpperCase())) {
-                        return TranslationUtil.getTranslation("equipped-cosmetic", String.valueOf(user.getCosmetic(CosmeticSlot.valueOf(args1.toUpperCase())) != null));
-                    }
-
                     MessagesUtil.sendDebugMessages(args1);
 
                     Cosmetic cosmetic = Cosmetics.getCosmetic(args1);
@@ -138,6 +133,10 @@ public class HMCPlaceholderExpansion extends PlaceholderExpansion {
                                 cosmetic = secondAttemptCosmetic;
                             }
                         } else {
+                            if (EnumUtils.isValidEnum(CosmeticSlot.class, args1.toUpperCase())) {
+                                return TranslationUtil.getTranslation("equipped-cosmetic", String.valueOf(user.getCosmetic(CosmeticSlot.valueOf(args1.toUpperCase())) != null));
+                            }
+
                             return "INVALID_COSMETIC";
                         }
                     }

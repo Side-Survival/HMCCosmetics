@@ -12,6 +12,7 @@ import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import me.lojosho.hibiscuscommons.config.serializer.ItemSerializer;
 import me.lojosho.hibiscuscommons.hooks.Hooks;
+import me.lojosho.hibiscuscommons.util.StringUtils;
 import me.lojosho.shaded.configurate.ConfigurationNode;
 import me.lojosho.shaded.configurate.serialize.SerializationException;
 import org.bukkit.Bukkit;
@@ -26,6 +27,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class TypeCosmetic extends Type {
 
@@ -108,6 +110,8 @@ public class TypeCosmetic extends Type {
                     DyeMenu.openMenu(user, cosmetic);
                 } else {
                     user.addPlayerCosmetic(cosmetic);
+                    if (user.isInWardrobe() && player != null)
+                        player.closeInventory();
                 }
             }
 
@@ -159,23 +163,29 @@ public class TypeCosmetic extends Type {
             return itemStack;
         }
 
-        if (!user.canEquipCosmetic(cosmetic, true) && !config.node("locked-item").virtual()) {
-            MessagesUtil.sendDebugMessages("GUI Locked Item");
-            ConfigurationNode lockedItem = config.node("locked-item");
-            try {
-                if (lockedItem.node("material").virtual()) lockedItem.node("material").set(config.node("item", "material").getString());
-            } catch (SerializationException e) {
-                // Nothing >:)
+        if (!user.canEquipCosmetic(cosmetic, true)) {
+            if (user.isInWardrobe()) {
+                List<String> lockedLore = MessagesUtil.getListString("wardrobe-item-lore");
+                ItemMeta meta = itemStack.getItemMeta();
+                meta.setLore(lockedLore.stream().map(StringUtils::parseStringToString).collect(Collectors.toList()));
+                itemStack.setItemMeta(meta);
+                itemStack.setItemMeta(processLoreLines(user, meta));
+            } else {
+                ItemStack unavailableItem = Hooks.getItem(Settings.getUnavailableItemMaterial());
+
+                List<String> lockedLore = MessagesUtil.getListString("locked-item-lore");
+                ItemMeta meta = itemStack.getItemMeta();
+                if (unavailableItem != null) {
+                    itemStack.setType(unavailableItem.getType());
+                    meta.setCustomModelData(Settings.getUnavailableItemData());
+                }
+                meta.setLore(lockedLore.stream().map(StringUtils::parseStringToString).collect(Collectors.toList()));
+                itemStack.setItemMeta(meta);
+                itemStack.setItemMeta(processLoreLines(user, meta));
             }
-            try {
-                itemStack = ItemSerializer.INSTANCE.deserialize(ItemStack.class, lockedItem);
-            } catch (SerializationException e) {
-                throw new RuntimeException(e);
-            }
-            if (itemStack.hasItemMeta()) itemStack.setItemMeta(processLoreLines(user, itemStack.getItemMeta()));
-            else MessagesUtil.sendDebugMessages("ItemStack has no ItemMeta in locked item?");
             return itemStack;
         }
+
         return itemStack;
     }
 

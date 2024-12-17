@@ -72,6 +72,8 @@ public class Settings {
     private static final String LOCKED_COSMETIC_COLOR_PATH = "locked-cosmetic-color";
     private static final String ENABLED_PATH = "enabled";
     private static final String SLOT_OPTIONS_PATH = "slot-options";
+    private static final String UNAVAILABLE_ITEM_MATERIAL_PATH = "unavailable-item-material";
+    private static final String UNAVAILABLE_ITEM_DATA_PATH = "unavailable-item-model-data";
 
     @Getter
     private static String defaultMenu;
@@ -166,6 +168,10 @@ public class Settings {
     private static boolean emoteMoveCheck;
     @Getter @Setter
     private static boolean allPlayersHidden;
+    @Getter
+    private static String unavailableItemMaterial;
+    @Getter
+    private static int unavailableItemData;
 
 
     public static void load(ConfigurationNode source) {
@@ -274,6 +280,9 @@ public class Settings {
             MessagesUtil.sendDebugMessages("There is a deprecated way of using WG hook setting. Change player_move_check to player-move-check in your configuration to prevent issues in the future. ", Level.WARNING);
             worldGuardMoveCheck = worldGuardSettings.node(HOOK_WG_MOVE_CHECK_PATH_LEGACY).getBoolean(true);
         }
+
+        unavailableItemMaterial = source.node(UNAVAILABLE_ITEM_MATERIAL_PATH).getString();
+        unavailableItemData = source.node(UNAVAILABLE_ITEM_DATA_PATH).getInt();
     }
 
     public static Vector loadVector(final ConfigurationNode config) {

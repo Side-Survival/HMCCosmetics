@@ -150,7 +150,7 @@ public class CosmeticCommand implements CommandExecutor {
                 }
 
                 TagResolver placeholders =
-                        TagResolver.resolver(Placeholder.parsed("cosmetic", cosmetic.getId()),
+                        TagResolver.resolver(Placeholder.parsed("cosmetic", cosmetic.getFormattedName()),
                                 TagResolver.resolver(Placeholder.parsed("player", player.getName())),
                                 TagResolver.resolver(Placeholder.parsed("cosmeticslot", cosmetic.getSlot().name())));
 
@@ -201,7 +201,7 @@ public class CosmeticCommand implements CommandExecutor {
                     }
 
                     TagResolver placeholders =
-                            TagResolver.resolver(Placeholder.parsed("cosmetic", user.getCosmetic(cosmeticSlot).getId()),
+                            TagResolver.resolver(Placeholder.parsed("cosmetic", user.getCosmetic(cosmeticSlot).getFormattedName()),
                                     TagResolver.resolver(Placeholder.parsed("player", player.getName())),
                                     TagResolver.resolver(Placeholder.parsed("cosmeticslot", cosmeticSlot.name())));
 
