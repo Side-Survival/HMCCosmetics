@@ -135,14 +135,14 @@ tasks {
         relocate("dev.triumphteam.gui", "com.hibiscusmc.hmccosmetics.shaded.gui")
         relocate("com.owen1212055.particlehelper", "com.hibiscusmc.hmccosmetics.shaded.particlehelper")
         relocate("com.ticxo.playeranimator", "com.hibiscusmc.hmccosmetics.shaded.playeranimator")
-        archiveFileName.set("HMCCosmeticsRemapped-${project.version}.jar")
+        archiveFileName.set("RealmsCosmetics-${project.version}.jar")
 
         dependencies {
             exclude(dependency("org.yaml:snakeyaml"))
         }
 
         doLast {
-            archiveFile.get().asFile.copyTo(layout.projectDirectory.file("run/plugins/HMCCosmeticsRemapped.jar").asFile, true)
+            archiveFile.get().asFile.copyTo(layout.projectDirectory.file("run/plugins/RealmsCosmetics.jar").asFile, true)
             println("If you use the plugin, consider buying it for: ")
             println("The custom resource pack, Oraxen + ItemAdder configurations, and Discord support!")
             println("Polymart: https://polymart.org/resource/1879")
@@ -171,7 +171,7 @@ bukkit {
     commands {
         register("cosmetic") {
             description = "Base Cosmetic Command"
-            aliases = listOf("hmccosmetics", "cosmetics")
+            aliases = listOf("cosmetics")
         }
     }
     permissions {

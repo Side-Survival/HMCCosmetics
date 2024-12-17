@@ -12,7 +12,7 @@ import org.jetbrains.annotations.NotNull;
  */
 public class HookHMCCosmetics extends Hook {
     public HookHMCCosmetics() {
-        super("HMCCosmetics", HookFlag.ITEM_SUPPORT);
+        super("RealmsCosmetics", HookFlag.ITEM_SUPPORT);
     }
 
     /**

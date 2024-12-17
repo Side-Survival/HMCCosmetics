@@ -229,7 +229,7 @@ public final class HMCCosmeticsPlugin extends HibiscusPlugin {
 
         if (Settings.isEmotesEnabled() && (HMCCosmeticsAPI.getNMSVersion().contains("v1_19_R3") || HMCCosmeticsAPI.getNMSVersion().contains("v1_20_R1"))) EmoteManager.loadEmotes(); // PlayerAnimator does not support 1.20.2 yet
 
-        getInstance().getLogger().info("Successfully Enabled HMCCosmetics");
+        getInstance().getLogger().info("Successfully Enabled RealmsCosmetics");
         getInstance().getLogger().info(Cosmetics.values().size() + " Cosmetics Successfully Setup");
         getInstance().getLogger().info(Menus.getMenuNames().size() + " Menus Successfully Setup");
         getInstance().getLogger().info(WardrobeSettings.getWardrobes().size() + " Wardrobes Successfully Setup");

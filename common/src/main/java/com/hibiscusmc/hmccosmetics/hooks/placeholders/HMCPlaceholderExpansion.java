@@ -32,7 +32,7 @@ public class HMCPlaceholderExpansion extends PlaceholderExpansion {
     @Override
     @NotNull
     public String getIdentifier() {
-        return "HMCCosmetics";
+        return "RealmsCosmetics";
     }
 
     @Override

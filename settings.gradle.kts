@@ -5,7 +5,7 @@ pluginManagement {
     }
 }
 
-rootProject.name = "HMCCosmetics"
+rootProject.name = "RealmsCosmetics"
 include(
     "common"
 )
