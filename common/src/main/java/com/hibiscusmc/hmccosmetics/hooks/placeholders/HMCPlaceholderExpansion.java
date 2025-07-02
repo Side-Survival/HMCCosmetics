@@ -139,7 +139,7 @@ public class HMCPlaceholderExpansion extends PlaceholderExpansion {
                                 cosmetic = secondAttemptCosmetic;
                             }
                         } else {
-                            if (EnumUtils.isValidEnum(CosmeticSlot.class, args1.toUpperCase())) {
+                            if (CosmeticSlot.contains(args1.toUpperCase())) {
                                 return TranslationUtil.getTranslation("equipped-cosmetic", String.valueOf(user.getCosmetic(CosmeticSlot.valueOf(args1.toUpperCase())) != null));
                             }
 

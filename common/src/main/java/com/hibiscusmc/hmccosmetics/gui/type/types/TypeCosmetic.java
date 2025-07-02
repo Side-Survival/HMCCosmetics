@@ -21,6 +21,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -111,7 +112,7 @@ public class TypeCosmetic extends Type {
                     DyeMenu.openMenu(viewer, cosmeticHolder, cosmetic);
                 } else if (isRequiredClick) {
                     cosmeticHolder.addCosmetic(cosmetic);
-                    if (cosmeticHolder.isInWardrobe() && viewer != null)
+                    if (cosmeticHolder instanceof CosmeticUser user && user.isInWardrobe() && viewer != null)
                         viewer.closeInventory();
                 }
             }
@@ -175,7 +176,7 @@ public class TypeCosmetic extends Type {
         }
 
         if (!cosmeticHolder.canEquipCosmetic(cosmetic, true)) {
-            if (cosmeticHolder.isInWardrobe()) {
+            if (cosmeticHolder instanceof CosmeticUser user && user.isInWardrobe()) {
                 List<String> lockedLore = MessagesUtil.getListString("wardrobe-item-lore");
                 ItemMeta meta = itemStack.getItemMeta();
                 meta.setLore(lockedLore.stream().map(StringUtils::parseStringToString).collect(Collectors.toList()));
@@ -194,6 +195,8 @@ public class TypeCosmetic extends Type {
                 itemStack.setItemMeta(meta);
                 itemStack.setItemMeta(processItemMeta(viewer, meta));
             }
+            if (itemStack.hasItemMeta()) itemStack.setItemMeta(processItemMeta(viewer, itemStack.getItemMeta()));
+            else MessagesUtil.sendDebugMessages("ItemStack has no ItemMeta in locked item?");
             return itemStack;
         }
 
