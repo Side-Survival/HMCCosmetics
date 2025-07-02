@@ -1,6 +1,5 @@
 package com.hibiscusmc.hmccosmetics;
 
-import com.hibiscusmc.hmccosmetics.api.HMCCosmeticsAPI;
 import com.hibiscusmc.hmccosmetics.api.events.HMCCosmeticSetupEvent;
 import com.hibiscusmc.hmccosmetics.command.CosmeticCommand;
 import com.hibiscusmc.hmccosmetics.command.CosmeticCommandTabComplete;
@@ -10,10 +9,10 @@ import com.hibiscusmc.hmccosmetics.config.WardrobeSettings;
 import com.hibiscusmc.hmccosmetics.cosmetic.Cosmetic;
 import com.hibiscusmc.hmccosmetics.cosmetic.Cosmetics;
 import com.hibiscusmc.hmccosmetics.database.Database;
-import com.hibiscusmc.hmccosmetics.emotes.EmoteManager;
 import com.hibiscusmc.hmccosmetics.gui.Menu;
 import com.hibiscusmc.hmccosmetics.gui.Menus;
 import com.hibiscusmc.hmccosmetics.hooks.items.HookHMCCosmetics;
+import com.hibiscusmc.hmccosmetics.hooks.misc.HookBetterHud;
 import com.hibiscusmc.hmccosmetics.hooks.placeholders.HMCPlaceholderExpansion;
 import com.hibiscusmc.hmccosmetics.hooks.worldguard.WGHook;
 import com.hibiscusmc.hmccosmetics.hooks.worldguard.WGListener;
@@ -21,11 +20,11 @@ import com.hibiscusmc.hmccosmetics.listener.PaperPlayerGameListener;
 import com.hibiscusmc.hmccosmetics.listener.PlayerConnectionListener;
 import com.hibiscusmc.hmccosmetics.listener.PlayerGameListener;
 import com.hibiscusmc.hmccosmetics.listener.ServerListener;
+import com.hibiscusmc.hmccosmetics.packets.CosmeticPacketInterface;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUsers;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import com.hibiscusmc.hmccosmetics.util.TranslationUtil;
-import com.ticxo.playeranimator.PlayerAnimatorImpl;
 import me.lojosho.hibiscuscommons.HibiscusCommonsPlugin;
 import me.lojosho.hibiscuscommons.HibiscusPlugin;
 import me.lojosho.hibiscuscommons.config.serializer.ItemSerializer;
@@ -52,6 +51,7 @@ public final class HMCCosmeticsPlugin extends HibiscusPlugin {
     public HMCCosmeticsPlugin() {
         super(13873, 1879);
         new HookHMCCosmetics();
+        new HookBetterHud();
     }
 
     @Override
@@ -64,10 +64,12 @@ public final class HMCCosmeticsPlugin extends HibiscusPlugin {
         if (!Path.of(getDataFolder().getPath(), "messages.yml").toFile().exists()) saveResource("messages.yml", false);
         if (!Path.of(getDataFolder().getPath(), "translations.yml").toFile().exists()) saveResource("translations.yml", false);
         if (!Path.of(getDataFolder().getPath() + "/cosmetics/").toFile().exists()) saveResource("cosmetics/defaultcosmetics.yml", false);
-        if (!Path.of(getDataFolder().getPath() + "/menus/").toFile().exists()) saveResource("menus/defaultmenu.yml", false);
-
-        // Player Animator
-        if (HMCCosmeticsAPI.getNMSVersion().contains("v1_19_R3") || HMCCosmeticsAPI.getNMSVersion().contains("v1_20_R1")) PlayerAnimatorImpl.initialize(this); // PlayerAnimator does not support 1.20.2 yet
+        if (!Path.of(getDataFolder().getPath() + "/menus/").toFile().exists()) {
+            saveResource("menus/defaultmenu_hats.yml", false);
+            saveResource("menus/defaultmenu_balloons.yml", false);
+            saveResource("menus/defaultmenu_hands.yml", false);
+            saveResource("menus/defaultmenu_backpacks.yml", false);
+        }
 
         // Configuration Sync
         final File configFile = Path.of(getInstance().getDataFolder().getPath(), "config.yml").toFile();
@@ -87,6 +89,7 @@ public final class HMCCosmeticsPlugin extends HibiscusPlugin {
 
         // Setup
         setup();
+        setPacketInterface(new CosmeticPacketInterface());
 
         // Commands
         getServer().getPluginCommand("cosmetic").setExecutor(new CosmeticCommand());
@@ -96,7 +99,7 @@ public final class HMCCosmeticsPlugin extends HibiscusPlugin {
         getServer().getPluginManager().registerEvents(new PlayerConnectionListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerGameListener(), this);
         getServer().getPluginManager().registerEvents(new ServerListener(), this);
-        // Taken from PaperLib
+
         if (HibiscusCommonsPlugin.isOnPaper()) {
             getServer().getPluginManager().registerEvents(new PaperPlayerGameListener(), this);
         }
@@ -123,9 +126,6 @@ public final class HMCCosmeticsPlugin extends HibiscusPlugin {
         for (Player player : Bukkit.getOnlinePlayers()) {
             CosmeticUser user = CosmeticUsers.getUser(player);
             if (user == null) continue;
-            if (user.getUserEmoteManager().isPlayingEmote()) {
-                player.setInvisible(false);
-            }
             if (user.isInWardrobe()) {
                 user.leaveWardrobe(true);
             }
@@ -226,8 +226,6 @@ public final class HMCCosmeticsPlugin extends HibiscusPlugin {
                 getInstance().getServer().getPluginManager().addPermission(new Permission(menu.getPermissionNode()));
             }
         }
-
-        if (Settings.isEmotesEnabled() && (HMCCosmeticsAPI.getNMSVersion().contains("v1_19_R3") || HMCCosmeticsAPI.getNMSVersion().contains("v1_20_R1"))) EmoteManager.loadEmotes(); // PlayerAnimator does not support 1.20.2 yet
 
         getInstance().getLogger().info("Successfully Enabled RealmsCosmetics");
         getInstance().getLogger().info(Cosmetics.values().size() + " Cosmetics Successfully Setup");

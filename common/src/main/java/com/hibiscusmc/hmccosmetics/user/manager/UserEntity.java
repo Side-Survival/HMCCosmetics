@@ -10,6 +10,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
@@ -43,8 +44,8 @@ public class UserEntity {
         if (System.currentTimeMillis() - viewerLastUpdate <= 1000) return List.of(); //Prevents mass refreshes
         ArrayList<Player> newPlayers = new ArrayList<>();
         ArrayList<Player> removePlayers = new ArrayList<>();
-        List<Player> players = HMCCPlayerUtils.getNearbyPlayers(location);
-        Player ownerPlayer = Bukkit.getPlayer(owner);
+        List<Player> players = HMCCPacketManager.getViewers(location);
+        Entity ownerPlayer = Bukkit.getEntity(owner);
         if (ownerPlayer == null) {
             MessagesUtil.sendDebugMessages("Owner is null (refreshViewers), returning empty list");
             return List.of();
@@ -79,7 +80,7 @@ public class UserEntity {
         if (this.getLocation() != null && this.getLocation().getWorld() == location.getWorld()) {
             // Was thinking about using schedulers to just send the packet later... but that would be a lot of tasks and
             // would probably cause more lag. Furthermore, the server "ticks" the cosmetics every second by defualt. So it's fine like this.
-            if (System.currentTimeMillis() - getLastPositionUpdate() <= Settings.getPacketEntityTeleportCooldown()) return;
+            //if (System.currentTimeMillis() - getLastPositionUpdate() <= Settings.getPacketEntityTeleportCooldown()) return;
         }
         this.location = location;
         for (Integer entity : ids) {
@@ -98,7 +99,7 @@ public class UserEntity {
             // First person backpacks need both packets to rotate properly, otherwise they look off
             // Regular backpacks just need the look packet
             if (additonalPacket) HMCCPacketManager.sendRotationPacket(entity, yaw, false, getViewers());
-            HMCCPacketManager.sendLookPacket(entity, location, getViewers());
+            HMCCPacketManager.sendRotateHeadPacket(entity, location, getViewers());
         }
     }
 }

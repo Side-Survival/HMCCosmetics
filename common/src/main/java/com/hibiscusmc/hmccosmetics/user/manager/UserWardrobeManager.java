@@ -64,6 +64,7 @@ public class UserWardrobeManager {
     private BossBar bossBar;
     @Getter
     private boolean active;
+    @Setter
     @Getter
     private WardrobeStatus wardrobeStatus;
     @Getter
@@ -108,15 +109,22 @@ public class UserWardrobeManager {
         MessagesUtil.sendMessage(player, "opened-wardrobe");
 
         Runnable run = () -> {
+            if (!player.isOnline()) {
+                end();
+                return;
+            }
+
             // Armorstand
             HMCCPacketManager.sendEntitySpawnPacket(viewingLocation, ARMORSTAND_ID, EntityType.ARMOR_STAND, UUID.randomUUID(), viewer);
             HMCCPacketManager.sendArmorstandMetadata(ARMORSTAND_ID, viewer);
-            HMCCPacketManager.sendLookPacket(ARMORSTAND_ID, viewingLocation, viewer);
+            NMSHandlers.getHandler().getPacketHandler().sendTeleportPacket(ARMORSTAND_ID, viewingLocation.getX(), viewingLocation.getY(), viewingLocation.getZ(), viewingLocation.getYaw(), viewingLocation.getPitch(), false, viewer);
+            //NMSHandlers.getHandler().getPacketHandler().sendLookAtPacket(ARMORSTAND_ID, viewingLocation, viewer);
+            HMCCPacketManager.sendRotateHeadPacket(ARMORSTAND_ID, viewingLocation, viewer);
 
             // Player
-            user.getPlayer().teleport(viewingLocation, PlayerTeleportEvent.TeleportCause.PLUGIN);
-            user.getPlayer().setInvisible(true);
-            HMCCPacketManager.gamemodeChangePacket(player, 3);
+            player.teleport(viewingLocation, PlayerTeleportEvent.TeleportCause.PLUGIN);
+            player.setInvisible(true);
+            HMCCPacketManager.gamemodeChangePacket(player, GameMode.SPECTATOR);
             HMCCPacketManager.sendCameraPacket(ARMORSTAND_ID, viewer);
 
             // NPC
@@ -136,7 +144,7 @@ public class UserWardrobeManager {
             }, 4);
 
             // Location
-            HMCCPacketManager.sendLookPacket(NPC_ID, npcLocation, viewer);
+            HMCCPacketManager.sendRotateHeadPacket(NPC_ID, npcLocation, viewer);
             HMCCPacketManager.sendRotationPacket(NPC_ID, npcLocation, true, viewer);
 
             // Misc
@@ -241,11 +249,11 @@ public class UserWardrobeManager {
             if (WardrobeSettings.isForceExitGamemode()) {
                 MessagesUtil.sendDebugMessages("Force Exit Gamemode " + WardrobeSettings.getExitGamemode());
                 player.setGameMode(WardrobeSettings.getExitGamemode());
-                HMCCPacketManager.gamemodeChangePacket(player, HMCCServerUtils.convertGamemode(WardrobeSettings.getExitGamemode())); // Success
+                HMCCPacketManager.gamemodeChangePacket(player, WardrobeSettings.getExitGamemode()); // Success
             } else {
                 MessagesUtil.sendDebugMessages("Original Gamemode " + this.originalGamemode);
                 player.setGameMode(this.originalGamemode);
-                HMCCPacketManager.gamemodeChangePacket(player, HMCCServerUtils.convertGamemode(this.originalGamemode)); // Success
+                HMCCPacketManager.gamemodeChangePacket(player, this.originalGamemode); // Success
             }
             user.showPlayer();
 
@@ -284,7 +292,7 @@ public class UserWardrobeManager {
         run.run();
     }
 
-    public void update() {
+    private void update() {
         final AtomicInteger data = new AtomicInteger();
 
         BukkitRunnable runnable = new BukkitRunnable() {
@@ -305,15 +313,17 @@ public class UserWardrobeManager {
                 int yaw = data.get();
                 location.setYaw(yaw);
 
-                HMCCPacketManager.sendLookPacket(NPC_ID, location, viewer);
+                HMCCPacketManager.sendRotateHeadPacket(NPC_ID, location, viewer);
                 user.hidePlayer();
                 int rotationSpeed = WardrobeSettings.getRotationSpeed();
-                location.setYaw(HMCCServerUtils.getNextYaw(yaw - 30, rotationSpeed));
-                HMCCPacketManager.sendRotationPacket(NPC_ID, location, true, viewer);
+                int newYaw = HMCCServerUtils.getNextYaw(yaw - 30, rotationSpeed);
+                location.setYaw(newYaw);
+                NMSHandlers.getHandler().getPacketHandler().sendRotationPacket(NPC_ID, newYaw, 0, false, viewer);
+                HMCCPacketManager.sendRotationPacket(NPC_ID, newYaw, true, viewer);
                 int nextyaw = HMCCServerUtils.getNextYaw(yaw, rotationSpeed);
                 data.set(nextyaw);
 
-                for (CosmeticSlot slot : CosmeticSlot.values()) {
+                for (CosmeticSlot slot : CosmeticSlot.values().values()) {
                     HMCCPacketManager.equipmentSlotUpdate(NPC_ID, user, slot, viewer);
                 }
 
@@ -344,10 +354,6 @@ public class UserWardrobeManager {
         };
 
         runnable.runTaskTimer(HMCCosmeticsPlugin.getInstance(), 0, 2);
-    }
-
-    public void setWardrobeStatus(WardrobeStatus status) {
-        this.wardrobeStatus = status;
     }
 
     public enum WardrobeStatus {

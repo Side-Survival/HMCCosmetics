@@ -3,12 +3,12 @@ import net.minecrell.pluginyml.bukkit.BukkitPluginDescription
 plugins {
     id("java")
     id("com.gradleup.shadow") version "8.3.2"
-    id("xyz.jpenilla.run-paper") version "2.2.0"
+    id("xyz.jpenilla.run-paper") version "2.3.1"
     id("net.minecrell.plugin-yml.bukkit") version "0.6.0"
 }
 
 group = "com.hibiscusmc"
-version = "2.7.4-DEV-${getGitCommitHash()}"
+version = "2.8.0${getGitCommitHash()}"
 
 allprojects {
     apply(plugin = "java")
@@ -16,16 +16,16 @@ allprojects {
 
     repositories {
         mavenCentral()
+        mavenLocal()
 
         // Paper Repo
-        maven("https://papermc.io/repo/repository/maven-public/")
+        maven("https://repo.papermc.io/repository/maven-public/")
         maven("https://oss.sonatype.org/content/repositories/snapshots")
 
         // Jitpack
         maven("https://jitpack.io")
 
-        // ProtocolLib repo
-        maven("https://repo.dmulloy2.net/repository/public/") //ProtocolLib Repo, constantly down
+        // Geary
         maven("https://repo.mineinabyss.com/releases/")
         maven("https://repo.mineinabyss.com/snapshots/")
 
@@ -64,6 +64,9 @@ allprojects {
         // Eco-Suite/Auxilor Repo
         maven("https://repo.auxilor.io/repository/maven-public/")
 
+        // Triumph GUI
+        maven("https://repo.triumphteam.dev/snapshots")
+
         // Hibiscus Commons
         maven("https://repo.hibiscusmc.com/releases")
     }
@@ -72,30 +75,46 @@ allprojects {
         compileOnly(fileTree("${project.rootDir}/lib") { include("*.jar") })
         compileOnly("com.mojang:authlib:1.5.25")
         //compileOnly("org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT")
-        compileOnly("io.papermc.paper:paper-api:1.20.1-R0.1-SNAPSHOT")
+        compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
         compileOnly("org.jetbrains:annotations:24.1.0")
-        compileOnly("com.comphenix.protocol:ProtocolLib:5.3.0")
         compileOnly("me.clip:placeholderapi:2.11.6")
         compileOnly("com.ticxo.modelengine:ModelEngine:R4.0.6")
-        compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.12")
+        compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.12") {
+            exclude(group = "org.bukkit")
+            exclude(group = "com.google.guava")
+            exclude(group = "com.google.code.gson")
+            exclude(group = "it.unimi.dsi")
+            exclude(group = "com.sk89q.jnbt")
+        }
+        compileOnly("io.github.toxicity188:BetterHud-standard-api:1.12") //Standard api
+        compileOnly("io.github.toxicity188:BetterHud-bukkit-api:1.12") //Platform api
+        compileOnly("io.github.toxicity188:BetterCommand:1.3") //BetterCommand library
         //compileOnly("it.unimi.dsi:fastutil:8.5.14")
         compileOnly("org.projectlombok:lombok:1.18.34")
-        compileOnly("me.lojosho:HibiscusCommons:0.5.1")
+        compileOnly("me.lojosho:HibiscusCommons:0.7.0-9ced7fd8")
 
         // Handled by Spigot Library Loader
-        compileOnly("net.kyori:adventure-api:4.17.0")
-        compileOnly("net.kyori:adventure-text-minimessage:4.17.0")
-        compileOnly("net.kyori:adventure-platform-bukkit:4.3.3")
+        compileOnly("net.kyori:adventure-api:4.23.0")
+        compileOnly("net.kyori:adventure-text-minimessage:4.23.0")
+        compileOnly("net.kyori:adventure-platform-bukkit:4.4.0")
 
-        annotationProcessor("org.projectlombok:lombok:1.18.34")
-        testCompileOnly("org.projectlombok:lombok:1.18.34")
-        testAnnotationProcessor("org.projectlombok:lombok:1.18.34")
+        annotationProcessor("org.projectlombok:lombok:1.18.36")
+        testCompileOnly("org.projectlombok:lombok:1.18.36")
+        testAnnotationProcessor("org.projectlombok:lombok:1.18.36")
 
-        implementation("dev.triumphteam:triumph-gui:3.1.10") {
+        implementation("dev.triumphteam:triumph-gui:3.2.0-SNAPSHOT") {
             exclude("net.kyori") // Already have adventure API
         }
         implementation("com.owen1212055:particlehelper:1.0.0-SNAPSHOT")
         implementation("com.ticxo.playeranimator:PlayerAnimator:R1.2.7")
+    }
+
+    tasks {
+        javadoc {
+            // javadoc spec has these added.
+            (options as StandardJavadocDocletOptions)
+                .tags("apiNote:a:API:", "implSpec:a:Implementation Requirements", "implNote:a:Implementation Note:")
+        }
     }
 }
 
@@ -120,12 +139,12 @@ tasks {
     }
 
     runServer {
-        minecraftVersion("1.21.1")
+        minecraftVersion("1.21.6")
 
         downloadPlugins {
             hangar("PlaceholderAPI", "2.11.6")
-            url("https://ci.dmulloy2.net/job/ProtocolLib/lastSuccessfulBuild/artifact/build/libs/ProtocolLib.jar")
-            url("https://download.luckperms.net/1567/bukkit/loader/LuckPerms-Bukkit-5.4.150.jar")
+            url("https://download.luckperms.net/1593/bukkit/loader/LuckPerms-Bukkit-5.5.8.jar")
+            github("Test-Account666", "PlugManX", "2.4.1", "PlugManX-2.4.1.jar")
         }
     }
 
@@ -161,8 +180,8 @@ bukkit {
     main = "com.hibiscusmc.hmccosmetics.HMCCosmeticsPlugin"
     apiVersion = "1.20"
     authors = listOf("LoJoSho")
-    depend = listOf("HibiscusCommons", "ProtocolLib")
-    softDepend = listOf("ModelEngine", "Oraxen", "ItemsAdder", "Geary", "HMCColor", "WorldGuard", "MythicMobs", "PlaceholderAPI", "SuperVanish", "PremiumVanish", "LibsDisguises", "Denizen", "MMOItems", "Eco")
+    depend = listOf("HibiscusCommons")
+    softDepend = listOf("Nexo", "BetterHud", "ModelEngine", "Oraxen", "ItemsAdder", "Geary", "HMCColor", "WorldGuard", "MythicMobs", "PlaceholderAPI", "SuperVanish", "PremiumVanish", "LibsDisguises", "Denizen", "MMOItems", "Eco")
     version = "${project.version}"
     loadBefore = listOf(
         "Cosmin" // Fixes an issue with Cosmin loading before and taking /cosmetic, when messing with what we do.
@@ -260,18 +279,28 @@ bukkit {
 }
 
 java {
-    toolchain.languageVersion.set(JavaLanguageVersion.of(21
-    ))
+    toolchain.languageVersion.set(JavaLanguageVersion.of(21))
+
+    withJavadocJar()
+    withSourcesJar()
 }
 
 fun getGitCommitHash(): String {
-    return try {
-        val process = ProcessBuilder("git", "rev-parse", "--short", "HEAD")
-            .redirectErrorStream(true)
-            .start()
+    var includeHash = true
+    val includeHashVariable = System.getenv("HMCC_INCLUDE_HASH")
 
-        process.inputStream.bufferedReader().use { it.readLine().trim() }
-    } catch (e: Exception) {
-        "unknown" // Fallback if Git is not available or an error occurs
+    if (!includeHashVariable.isNullOrEmpty()) includeHash = includeHashVariable.toBoolean()
+
+    if (includeHash) {
+        return try {
+            val process = ProcessBuilder("git", "rev-parse", "--short", "HEAD")
+                .redirectErrorStream(true)
+                .start()
+
+            process.inputStream.bufferedReader().use { "-" + it.readLine().trim() }
+        } catch (e: Exception) {
+            "-unknown" // Fallback if Git is not available or an error occurs
+        }
     }
+    return ""
 }

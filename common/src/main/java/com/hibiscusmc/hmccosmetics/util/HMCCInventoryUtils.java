@@ -1,6 +1,5 @@
 package com.hibiscusmc.hmccosmetics.util;
 
-import com.comphenix.protocol.wrappers.EnumWrappers;
 import com.hibiscusmc.hmccosmetics.HMCCosmeticsPlugin;
 import com.hibiscusmc.hmccosmetics.cosmetic.CosmeticSlot;
 import org.bukkit.NamespacedKey;
@@ -12,24 +11,20 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class HMCCInventoryUtils {
 
-    /**
-     * Converts from the Bukkit item slots to ProtocolLib item slots. Will produce a null if an improper bukkit item slot is sent through
-     * @param slot The BUKKIT item slot to convert.
-     * @return The ProtocolLib item slot that is returned
-     */
-    public static EnumWrappers.ItemSlot itemBukkitSlot(final EquipmentSlot slot) {
-        return switch (slot) {
-            case HEAD -> EnumWrappers.ItemSlot.HEAD;
-            case CHEST -> EnumWrappers.ItemSlot.CHEST;
-            case LEGS -> EnumWrappers.ItemSlot.LEGS;
-            case FEET -> EnumWrappers.ItemSlot.FEET;
-            case HAND -> EnumWrappers.ItemSlot.MAINHAND;
-            case OFF_HAND -> EnumWrappers.ItemSlot.OFFHAND;
-        };
+    private static final Map<CosmeticSlot, EquipmentSlot> SLOT_MAP = new HashMap<>();
+    static {
+        SLOT_MAP.put(CosmeticSlot.HELMET, EquipmentSlot.HEAD);
+        SLOT_MAP.put(CosmeticSlot.CHESTPLATE, EquipmentSlot.CHEST);
+        SLOT_MAP.put(CosmeticSlot.LEGGINGS, EquipmentSlot.LEGS);
+        SLOT_MAP.put(CosmeticSlot.BOOTS, EquipmentSlot.FEET);
+        SLOT_MAP.put(CosmeticSlot.OFFHAND, EquipmentSlot.OFF_HAND);
+        SLOT_MAP.put(CosmeticSlot.MAINHAND, EquipmentSlot.HAND);
     }
 
     public static int getPacketArmorSlot(final EquipmentSlot slot) {
@@ -51,18 +46,6 @@ public class HMCCInventoryUtils {
             case 7 -> EquipmentSlot.LEGS;
             case 8 -> EquipmentSlot.FEET;
             case 45 -> EquipmentSlot.OFF_HAND;
-            default -> null;
-        };
-    }
-
-    public static CosmeticSlot getItemSlotToCosmeticSlot(final EnumWrappers.ItemSlot slot) {
-        return switch (slot) {
-            case HEAD -> CosmeticSlot.HELMET;
-            case CHEST -> CosmeticSlot.CHESTPLATE;
-            case LEGS -> CosmeticSlot.LEGGINGS;
-            case FEET -> CosmeticSlot.BOOTS;
-            case OFFHAND -> CosmeticSlot.OFFHAND;
-            case MAINHAND -> CosmeticSlot.MAINHAND;
             default -> null;
         };
     }
@@ -132,55 +115,7 @@ public class HMCCInventoryUtils {
     @Contract(pure = true)
     @Nullable
     public static EquipmentSlot getEquipmentSlot(@NotNull CosmeticSlot slot) {
-        switch (slot) {
-            case HELMET -> {
-                return EquipmentSlot.HEAD;
-            }
-            case CHESTPLATE -> {
-                return EquipmentSlot.CHEST;
-            }
-            case LEGGINGS -> {
-                return EquipmentSlot.LEGS;
-            }
-            case BOOTS -> {
-                return EquipmentSlot.FEET;
-            }
-            case OFFHAND -> {
-                return EquipmentSlot.OFF_HAND;
-            }
-            case MAINHAND -> {
-                return EquipmentSlot.HAND;
-            }
-            default -> {
-                return null;
-            }
-        }
-    }
-
-    public static EquipmentSlot getEquipmentSlot(@NotNull EnumWrappers.ItemSlot slot) {
-        switch (slot) {
-            case HEAD -> {
-                return EquipmentSlot.HEAD;
-            }
-            case CHEST -> {
-                return EquipmentSlot.CHEST;
-            }
-            case LEGS -> {
-                return EquipmentSlot.LEGS;
-            }
-            case FEET -> {
-                return EquipmentSlot.FEET;
-            }
-            case OFFHAND -> {
-                return EquipmentSlot.OFF_HAND;
-            }
-            case MAINHAND -> {
-                return EquipmentSlot.HAND;
-            }
-            default -> {
-                return null;
-            }
-        }
+        return SLOT_MAP.get(slot);
     }
 
     public static boolean isCosmeticItem(ItemStack itemStack) {

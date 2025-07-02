@@ -3,6 +3,7 @@ package com.hibiscusmc.hmccosmetics.gui.type.types;
 import com.hibiscusmc.hmccosmetics.HMCCosmeticsPlugin;
 import com.hibiscusmc.hmccosmetics.config.Settings;
 import com.hibiscusmc.hmccosmetics.cosmetic.Cosmetic;
+import com.hibiscusmc.hmccosmetics.cosmetic.CosmeticHolder;
 import com.hibiscusmc.hmccosmetics.cosmetic.Cosmetics;
 import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticArmorType;
 import com.hibiscusmc.hmccosmetics.gui.action.Actions;
@@ -20,9 +21,6 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.ItemMeta;
-import org.bukkit.inventory.meta.SkullMeta;
-import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
@@ -40,7 +38,7 @@ public class TypeCosmetic extends Type {
     }
 
     @Override
-    public void run(CosmeticUser user, @NotNull ConfigurationNode config, ClickType clickType) {
+    public void run(Player viewer, CosmeticHolder cosmeticHolder, ConfigurationNode config, ClickType clickType) {
         MessagesUtil.sendDebugMessages("Running Cosmetic Click Type");
         if (config.node("cosmetic").virtual()) {
             MessagesUtil.sendDebugMessages("Cosmetic Config Field Virtual");
@@ -48,32 +46,33 @@ public class TypeCosmetic extends Type {
         }
         String cosmeticName = config.node("cosmetic").getString();
         Cosmetic cosmetic = Cosmetics.getCosmetic(cosmeticName);
-        Player player = user.getPlayer();
         if (cosmetic == null) {
             MessagesUtil.sendDebugMessages("No Cosmetic Found");
-            MessagesUtil.sendMessage(player, "invalid-cosmetic");
+            MessagesUtil.sendMessage(viewer, "invalid-cosmetic");
             return;
         }
 
-        if (!user.canEquipCosmetic(cosmetic)) {
+        if (!cosmeticHolder.canEquipCosmetic(cosmetic)) {
             MessagesUtil.sendDebugMessages("No Cosmetic Permission");
-            MessagesUtil.sendMessage(player, "no-cosmetic-permission");
+            MessagesUtil.sendMessage(viewer, "no-cosmetic-permission");
             return;
         }
 
         boolean isUnEquippingCosmetic = false;
-        if (user.getCosmetic(cosmetic.getSlot()) == cosmetic) isUnEquippingCosmetic = true;
+        if (cosmeticHolder.getCosmetic(cosmetic.getSlot()) == cosmetic) isUnEquippingCosmetic = true;
 
+        String dyeClick = Settings.getCosmeticDyeClickType();
         String requiredClick;
         if (isUnEquippingCosmetic) requiredClick = Settings.getCosmeticUnEquipClickType();
         else requiredClick = Settings.getCosmeticEquipClickType();
 
         MessagesUtil.sendDebugMessages("Required click type: " + requiredClick);
         MessagesUtil.sendDebugMessages("Click type: " + clickType.name());
-        if (!requiredClick.equalsIgnoreCase("ANY") && !requiredClick.equalsIgnoreCase(clickType.name())) {
-            MessagesUtil.sendMessage(user.getPlayer(), "invalid-click-type");
-            return;
-        }
+
+        final boolean isRequiredClick = requiredClick.equalsIgnoreCase("ANY") || requiredClick.equalsIgnoreCase(clickType.name());
+        final boolean isDyeClick = dyeClick.equalsIgnoreCase("ANY") || dyeClick.equalsIgnoreCase(clickType.name());
+
+        if (!isRequiredClick) isUnEquippingCosmetic = false;
 
         List<String> actionStrings = new ArrayList<>();
         ConfigurationNode actionConfig = config.node("actions");
@@ -101,27 +100,29 @@ public class TypeCosmetic extends Type {
             if (isUnEquippingCosmetic) {
                 if (!actionConfig.node("on-unequip").virtual()) actionStrings.addAll(actionConfig.node("on-unequip").getList(String.class));
                 MessagesUtil.sendDebugMessages("on-unequip");
-                user.removeCosmeticSlot(cosmetic);
+                cosmeticHolder.removeCosmeticSlot(cosmetic);
             } else {
                 if (!actionConfig.node("on-equip").virtual()) actionStrings.addAll(actionConfig.node("on-equip").getList(String.class));
                 MessagesUtil.sendDebugMessages("on-equip");
+                MessagesUtil.sendDebugMessages("Preparing for on-equip with the following checks:");
+                MessagesUtil.sendDebugMessages("CosmeticDyeable? " + cosmetic.isDyeable() + " / isDyeClick? " + isDyeClick + " / isHMCColorActive? " + Hooks.isActiveHook("HMCColor"));
                 // TODO: Redo this
-                if (cosmetic.isDyable() && Hooks.isActiveHook("HMCColor")) {
-                    DyeMenu.openMenu(user, cosmetic);
-                } else {
-                    user.addPlayerCosmetic(cosmetic);
-                    if (user.isInWardrobe() && player != null)
-                        player.closeInventory();
+                if (cosmetic.isDyeable() && isDyeClick && Hooks.isActiveHook("HMCColor")) {
+                    DyeMenu.openMenu(viewer, cosmeticHolder, cosmetic);
+                } else if (isRequiredClick) {
+                    cosmeticHolder.addCosmetic(cosmetic);
+                    if (cosmeticHolder.isInWardrobe() && viewer != null)
+                        viewer.closeInventory();
                 }
             }
 
-            Actions.runActions(user, actionStrings);
+            Actions.runActions(viewer, cosmeticHolder, actionStrings);
 
         } catch (SerializationException e) {
             e.printStackTrace();
         }
         // Fixes issue with offhand cosmetics not appearing. Yes, I know this is dumb
-        Runnable run = () -> user.updateCosmetic(cosmetic.getSlot());
+        Runnable run = () -> cosmeticHolder.updateCosmetic(cosmetic.getSlot());
         if (cosmetic instanceof CosmeticArmorType) {
             if (((CosmeticArmorType) cosmetic).getEquipSlot().equals(EquipmentSlot.OFF_HAND)) {
                 Bukkit.getScheduler().runTaskLater(HMCCosmeticsPlugin.getInstance(), run, 1);
@@ -132,8 +133,18 @@ public class TypeCosmetic extends Type {
     }
 
     @Override
-    public ItemStack setItem(@NotNull CosmeticUser user, @NotNull ConfigurationNode config, @NotNull ItemStack itemStack, int slot) {
-        if (itemStack.hasItemMeta()) itemStack.setItemMeta(processLoreLines(user, itemStack.getItemMeta()));
+    public void run(CosmeticUser user, @NotNull ConfigurationNode config, ClickType clickType) {
+        run(user.getPlayer(), user, config, clickType);
+    }
+
+    @Override
+    public ItemStack setItem(CosmeticUser user, ConfigurationNode config, ItemStack itemStack, int slot) {
+        return setItem(user.getPlayer(), user, config, itemStack, slot);
+    }
+
+    @Override
+    public ItemStack setItem(@NotNull Player viewer, @NotNull CosmeticHolder cosmeticHolder, @NotNull ConfigurationNode config, @NotNull ItemStack itemStack, int slot) {
+        if (itemStack.hasItemMeta()) itemStack.setItemMeta(processItemMeta(viewer, itemStack.getItemMeta()));
         else MessagesUtil.sendDebugMessages("ItemStack has no ItemMeta?");
 
         if (config.node("cosmetic").virtual()) {
@@ -145,9 +156,9 @@ public class TypeCosmetic extends Type {
             return itemStack;
         }
 
-        if (user.hasCosmeticInSlot(cosmetic) && (!config.node("equipped-item").virtual() || !config.node("locked-equipped-item").virtual())) {
+        if (cosmeticHolder.hasCosmeticInSlot(cosmetic) && (!config.node("equipped-item").virtual() || !config.node("locked-equipped-item").virtual())) {
             MessagesUtil.sendDebugMessages("GUI Equipped Item");
-            ConfigurationNode equippedItem = config.node(user.canEquipCosmetic(cosmetic, true) && !config.node("equipped-item").virtual() ? "equipped-item" : "locked-equipped-item");
+            ConfigurationNode equippedItem = config.node(cosmeticHolder.canEquipCosmetic(cosmetic, true) && !config.node("equipped-item").virtual() ? "equipped-item" : "locked-equipped-item");
             try {
                 if (equippedItem.node("material").virtual()) equippedItem.node("material").set(config.node("item", "material").getString());
             } catch (SerializationException e) {
@@ -158,18 +169,18 @@ public class TypeCosmetic extends Type {
             } catch (SerializationException e) {
                 throw new RuntimeException(e);
             }
-            if (itemStack.hasItemMeta()) itemStack.setItemMeta(processLoreLines(user, itemStack.getItemMeta()));
+            if (itemStack.hasItemMeta()) itemStack.setItemMeta(processItemMeta(viewer, itemStack.getItemMeta()));
             else MessagesUtil.sendDebugMessages("ItemStack has no ItemMeta in equipped item?");
             return itemStack;
         }
 
-        if (!user.canEquipCosmetic(cosmetic, true)) {
-            if (user.isInWardrobe()) {
+        if (!cosmeticHolder.canEquipCosmetic(cosmetic, true)) {
+            if (cosmeticHolder.isInWardrobe()) {
                 List<String> lockedLore = MessagesUtil.getListString("wardrobe-item-lore");
                 ItemMeta meta = itemStack.getItemMeta();
                 meta.setLore(lockedLore.stream().map(StringUtils::parseStringToString).collect(Collectors.toList()));
                 itemStack.setItemMeta(meta);
-                itemStack.setItemMeta(processLoreLines(user, meta));
+                itemStack.setItemMeta(processItemMeta(viewer, meta));
             } else {
                 ItemStack unavailableItem = Hooks.getItem(Settings.getUnavailableItemMaterial());
 
@@ -181,36 +192,11 @@ public class TypeCosmetic extends Type {
                 }
                 meta.setLore(lockedLore.stream().map(StringUtils::parseStringToString).collect(Collectors.toList()));
                 itemStack.setItemMeta(meta);
-                itemStack.setItemMeta(processLoreLines(user, meta));
+                itemStack.setItemMeta(processItemMeta(viewer, meta));
             }
             return itemStack;
         }
 
         return itemStack;
-    }
-
-    @Contract("_, _ -> param2")
-    @NotNull
-    @SuppressWarnings("Duplicates")
-    private ItemMeta processLoreLines(CosmeticUser user, @NotNull ItemMeta itemMeta) {
-        List<String> processedLore = new ArrayList<>();
-
-        if (itemMeta.hasDisplayName()) {
-            itemMeta.setDisplayName(Hooks.processPlaceholders(user.getPlayer(), itemMeta.getDisplayName()));
-        }
-
-        if (itemMeta.hasLore()) {
-            for (String loreLine : itemMeta.getLore()) {
-                processedLore.add(Hooks.processPlaceholders(user.getPlayer(), loreLine));
-            }
-        }
-
-        if (itemMeta instanceof SkullMeta skullMeta) {
-            if (skullMeta.hasOwner() && skullMeta.getOwner() != null) {
-                skullMeta.setOwner(Hooks.processPlaceholders(user.getPlayer(), skullMeta.getOwner()));
-            }
-        }
-        itemMeta.setLore(processedLore);
-        return itemMeta;
     }
 }
