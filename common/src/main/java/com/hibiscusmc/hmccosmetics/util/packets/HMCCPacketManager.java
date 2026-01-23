@@ -1,38 +1,33 @@
 package com.hibiscusmc.hmccosmetics.util.packets;
 
+import com.hibiscusmc.hmccosmetics.HMCCosmeticsPlugin;
 import com.hibiscusmc.hmccosmetics.config.Settings;
 import com.hibiscusmc.hmccosmetics.cosmetic.CosmeticSlot;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
-import com.hibiscusmc.hmccosmetics.user.CosmeticUsers;
 import com.hibiscusmc.hmccosmetics.util.HMCCInventoryUtils;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import me.lojosho.hibiscuscommons.nms.MinecraftVersion;
 import me.lojosho.hibiscuscommons.nms.NMSHandlers;
-import me.lojosho.hibiscuscommons.util.packets.PacketManager;
+import me.lojosho.hibiscuscommons.nms.NMSPacketBuilder;
+import me.lojosho.hibiscuscommons.packets.wrapper.PacketWrapper;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.entity.Display;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.ItemDisplay;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import org.joml.Quaternionf;
-import org.joml.Vector3f;
 
 import java.util.*;
 
-public class HMCCPacketManager extends PacketManager {
+public class HMCCPacketManager {
 
+    // The cloud effect map, in case it gets lost: Map<Integer, Number> dataValues = Map.of(0, (byte) 0x20, 8, 0f);
+    private static final Map<Integer, Number> CLOUD_EFFECT_INVISIBLE_DATA_VALUES = Map.of(0, (byte) 0x20, 8, 0f); // For
+    private static final Map<Integer, Number> GENERIC_INVISIBLE_DATA_VALUES = Map.of(0, (byte) 0x20);
     private static final List<CosmeticSlot> EQUIPMENT_SLOTS = List.of(CosmeticSlot.HELMET, CosmeticSlot.CHESTPLATE, CosmeticSlot.LEGGINGS, CosmeticSlot.BOOTS, CosmeticSlot.MAINHAND, CosmeticSlot.OFFHAND);
-
-    public static void sendEntitySpawnPacket(
-            final @NotNull Location location,
-            final int entityId,
-            final EntityType entityType,
-            final UUID uuid
-            ) {
-        sendEntitySpawnPacket(location, entityId, entityType, uuid, getViewers(location));
-    }
 
     public static void sendEntitySpawnPacket(
             final @NotNull Location location,
@@ -41,7 +36,7 @@ public class HMCCPacketManager extends PacketManager {
             final UUID uuid,
             final @NotNull List<Player> sendTo
     ) {
-        NMSHandlers.getHandler().getPacketHandler().sendSpawnEntityPacket(entityId, uuid, entityType, location, sendTo);
+        NMSHandlers.getHandler().getPacketBuilder().buildEntitySpawnPacket(entityId, uuid, entityType, location).sendPacket(sendTo);
     }
 
     public static void equipmentSlotUpdate(
@@ -55,22 +50,7 @@ public class HMCCPacketManager extends PacketManager {
             if (empty) item = new ItemStack(Material.AIR);
             items.put(slot, item);
         }
-        equipmentSlotUpdate(player.getEntityId(), items, sendTo);
-    }
-    public static void equipmentSlotUpdate(
-            @NotNull Player player,
-            CosmeticSlot cosmetic,
-            List<Player> sendTo
-    ) {
-        CosmeticUser user = CosmeticUsers.getUser(player.getUniqueId());
-        equipmentSlotUpdate(player.getEntityId(), user, cosmetic, sendTo);
-    }
-    public static void equipmentSlotUpdate(
-            CosmeticUser user,
-            CosmeticSlot cosmeticSlot,
-            List<Player> sendTo
-    ) {
-        equipmentSlotUpdate(user.getEntity().getEntityId(), user, cosmeticSlot, sendTo);
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityEquipmentSlotUpdatePacket(player.getEntityId(), items).sendPacket(sendTo);
     }
 
     public static void equipmentSlotUpdate(
@@ -80,31 +60,84 @@ public class HMCCPacketManager extends PacketManager {
             List<Player> sendTo
     ) {
         if (!EQUIPMENT_SLOTS.contains(cosmeticSlot)) return;
-        equipmentSlotUpdate(entityId, HMCCInventoryUtils.getEquipmentSlot(cosmeticSlot), user.getUserCosmeticItem(cosmeticSlot), sendTo);
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityEquipmentSlotUpdatePacket(entityId, Map.of(HMCCInventoryUtils.getEquipmentSlot(cosmeticSlot), user.getUserCosmeticItem(cosmeticSlot))).sendPacket(sendTo);
     }
 
-    public static void sendArmorstandMetadata(
+    public static void equipmentSlotUpdate(
             int entityId,
+            EquipmentSlot equipmentSlot,
+            ItemStack itemStack,
             List<Player> sendTo
     ) {
-        byte mask = (byte) (Settings.isBackpackPreventDarkness() ? 0x21 : 0x20);
-        Map<Integer, Number> dataValues = Map.of(0, mask, 15, (byte) 0x10);
-        NMSHandlers.getHandler().getPacketHandler().sendSharedEntityData(entityId, dataValues, sendTo);
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityEquipmentSlotUpdatePacket(entityId, Map.of(equipmentSlot, itemStack)).sendPacket(sendTo);
     }
 
     public static void sendInvisibilityPacket(
             int entityId,
             List<Player> sendTo
     ) {
-        NMSHandlers.getHandler().getPacketHandler().sendSharedEntityData(entityId, Map.of(0, (byte) 0x20), sendTo);
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityMetadataPacket(entityId, Map.of(0, (byte) 0x20)).sendPacket(sendTo);
     }
 
-    public static void sendCloudEffect(
+    public static void spawnInvisibleEntity(
+            int entityId,
+            EntityType entityType,
+            Location location,
+            UUID uuid,
+            List<Player> sendTo
+    ) {
+        NMSPacketBuilder packetBuilder = NMSHandlers.getHandler().getPacketBuilder();
+        List<PacketWrapper> packets = new ArrayList<>();
+        packets.add(packetBuilder.buildEntitySpawnPacket(entityId, uuid, entityType, location));
+        packets.add(packetBuilder.buildEntityMetadataPacket(entityId, GENERIC_INVISIBLE_DATA_VALUES));
+        NMSHandlers.getHandler().getPacketSender().sendBundle(packets, sendTo);
+    }
+
+    public static void spawnCloudAndHandleEffect(
+            int entityId,
+            Location location,
+            UUID uuid,
+            List<Player> sendTo
+    ) {
+        NMSPacketBuilder packetBuilder = NMSHandlers.getHandler().getPacketBuilder();
+        List<PacketWrapper> packets = new ArrayList<>();
+        packets.add(packetBuilder.buildEntitySpawnPacket(entityId, uuid, EntityType.AREA_EFFECT_CLOUD, location));
+        packets.add(packetBuilder.buildEntityMetadataPacket(entityId, CLOUD_EFFECT_INVISIBLE_DATA_VALUES));
+        NMSHandlers.getHandler().getPacketSender().sendBundle(packets, sendTo);
+    }
+
+    public static void spawnInvisibleArmorstand(
+            int entityId,
+            Location location,
+            UUID uuid,
+            List<Player> sendTo
+    ) {
+        NMSPacketBuilder packetBuilder = NMSHandlers.getHandler().getPacketBuilder();
+        List<PacketWrapper> packets = new ArrayList<>();
+        packets.add(packetBuilder.buildEntitySpawnPacket(entityId, uuid, EntityType.ARMOR_STAND, location));
+        packets.add(packetBuilder.buildEntityMetadataPacket(entityId, getInvisibleArmorStandData()));
+        NMSHandlers.getHandler().getPacketSender().sendBundle(packets, sendTo);
+    }
+
+    /**
+     * This is just a normal meta data packet (non-bundled)
+     * @param entityId
+     * @param sendTo
+     */
+    public static void sendArmorstandMetadata(
             int entityId,
             List<Player> sendTo
     ) {
-        Map<Integer, Number> dataValues = Map.of(0, (byte) 0x20, 8, 0f);
-        NMSHandlers.getHandler().getPacketHandler().sendSharedEntityData(entityId, dataValues, sendTo);
+        Map<Integer, Number> dataValues = getInvisibleArmorStandData();
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityMetadataPacket(entityId, dataValues).sendPacket(sendTo);
+    }
+
+    public static Map<Integer, Number> getInvisibleArmorStandData() {
+        return Map.of(0, getMask(), 15, (byte) 0x10);
+    }
+
+    private static byte getMask() {
+        return (byte) (Settings.isBackpackPreventDarkness() ? 0x21 : 0x20);
     }
 
     public static void sendRotationPacket(
@@ -121,7 +154,7 @@ public class HMCCPacketManager extends PacketManager {
             boolean onGround,
             @NotNull List<Player> sendTo
     ) {
-        NMSHandlers.getHandler().getPacketHandler().sendRotationPacket(entityId, location.getYaw(), location.getPitch(), onGround, sendTo);
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityRotatePacket(entityId, location.getYaw(), location.getPitch(), onGround).sendPacket(sendTo);
     }
 
     public static void sendRotationPacket(
@@ -130,7 +163,19 @@ public class HMCCPacketManager extends PacketManager {
             boolean onGround,
             @NotNull List<Player> sendTo
     ) {
-        NMSHandlers.getHandler().getPacketHandler().sendRotationPacket(entityId, yaw, 0, onGround, sendTo);
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityRotatePacket(entityId, yaw, 0, onGround).sendPacket(sendTo);
+    }
+
+    public static void sendTeleportPacket(int entityId, Location location, boolean onGround, List<Player> sendTo) {
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityTeleportPacket(
+                entityId,
+                location.x(),
+                location.y(),
+                location.z(),
+                location.getYaw(),
+                location.getPitch(),
+                onGround
+        ).sendPacket(sendTo);
     }
 
     /**
@@ -157,7 +202,7 @@ public class HMCCPacketManager extends PacketManager {
             final int[] passengerIds,
             final @NotNull List<Player> sendTo
     ) {
-        NMSHandlers.getHandler().getPacketHandler().sendMountPacket(mountId, passengerIds, sendTo);
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityMountPacket(mountId, passengerIds).sendPacket(sendTo);
     }
 
     /**
@@ -171,23 +216,7 @@ public class HMCCPacketManager extends PacketManager {
             final int passengerId,
             final @NotNull List<Player> sendTo
     ) {
-        sendRidingPacket(mountId, new int[] {passengerId}, sendTo);
-    }
-
-    /**
-     *
-     * @param location Location of the fake player.
-     * @param uuid UUID of the fake player. Should be random.
-     * @param entityId The entityID that the entity will take on.
-     * @param sendTo Who should it send the packet to?
-     */
-    public static void sendFakePlayerSpawnPacket(
-            final @NotNull Location location,
-            final UUID uuid,
-            final int entityId,
-            final @NotNull List<Player> sendTo
-    ) {
-        sendEntitySpawnPacket(location, entityId, EntityType.PLAYER, uuid, sendTo);
+        sendRidingPacket(mountId, new int[]{passengerId}, sendTo);
     }
 
     /**
@@ -203,7 +232,7 @@ public class HMCCPacketManager extends PacketManager {
             final String npcName,
             final List<Player> sendTo
     ) {
-        NMSHandlers.getHandler().getPacketHandler().sendFakePlayerInfoPacket(skinnedPlayer, entityId, uuid, npcName, sendTo);
+        NMSHandlers.getHandler().getPacketBuilder().buildPlayerInfoAddPacket(skinnedPlayer, entityId, uuid, npcName).sendPacket(sendTo);
     }
 
     /**
@@ -215,19 +244,15 @@ public class HMCCPacketManager extends PacketManager {
             final int playerId,
             final @NotNull List<Player> sendTo
     ) {
-        /*
-        0x01 = Is on fire
-        0x02 = Is courching
-        0x04 = Unusued
-        0x08 = Sprinting
-        0x10 = Is swimming
-        0x20 = Invisibile
-        0x40 = Is Glowing
-        0x80 = Is flying with an elytra
-         https://wiki.vg/Entity_metadata#Entity
-         */
+        // https://minecraft.wiki/w/Java_Edition_protocol/Entity_metadata#Avatar
+        if (NMSHandlers.getVersion().isLowerOrEqual(MinecraftVersion.v1_21_8)) NMSHandlers.getHandler().getPacketBuilder().buildEntityMetadataPacket(playerId, getPlayerOverlayMetaData()).sendPacket(sendTo);
+        else NMSHandlers.getHandler().getPacketBuilder().buildEntityMetadataPacket(playerId, getPlayerOverlayMetaData()).sendPacket(sendTo);
+    }
+
+    public static Map<Integer, Number> getPlayerOverlayMetaData() {
         final byte mask = 0x01 | 0x02 | 0x04 | 0x08 | 0x010 | 0x020 | 0x40;
-        NMSHandlers.getHandler().getPacketHandler().sendSharedEntityData(playerId, Map.of(17, mask), sendTo);
+        if (NMSHandlers.getVersion().isLowerOrEqual(MinecraftVersion.v1_21_8)) return Map.of(17, mask);
+        else return Map.of(16, mask);
     }
 
     /**
@@ -242,7 +267,7 @@ public class HMCCPacketManager extends PacketManager {
             final UUID uuid,
             final List<Player> sendTo
     ) {
-        NMSHandlers.getHandler().getPacketHandler().sendPlayerInfoRemovePacket(uuid, sendTo);
+        NMSHandlers.getHandler().getPacketBuilder().buildPlayerInfoRemovePacket(List.of(uuid)).sendPacket(sendTo);
     }
 
     public static void sendLeashPacket(
@@ -250,7 +275,15 @@ public class HMCCPacketManager extends PacketManager {
             final int entityId,
             final Location location
     ) {
-        sendLeashPacket(leashedEntity, entityId, getViewers(location));
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityLeashPacket(leashedEntity, entityId).sendPacket(getViewers(location));
+    }
+
+    public static void sendLeashPacket(
+            final int leashedEntity,
+            final int entityId,
+            final List<Player> sendTo
+    ) {
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityLeashPacket(leashedEntity, entityId).sendPacket(sendTo);
     }
 
     /**
@@ -268,9 +301,30 @@ public class HMCCPacketManager extends PacketManager {
             final boolean onGround,
             @NotNull List<Player> sendTo
     ) {
-        NMSHandlers.getHandler().getPacketHandler().sendMovePacket(entityId, from, to, onGround, sendTo);
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityMovePacket(entityId, from, to, onGround).sendPacket(sendTo);
     }
 
+    public static void sendEntityScalePacket(
+        int entityId,
+        double scale,
+        List<Player> sendTo
+    ) {
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityAttributePacket(entityId, Attribute.SCALE, scale).sendPacket(sendTo);
+    }
+
+    public static void sendEntityDestroyPacket(int entityId, List<Player> sendTo) {
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityDestroyPacket(IntList.of(entityId)).sendPacket(sendTo);
+    }
+
+    public static void sendEntityDestroyPacket(List<Integer> entities, List<Player> sendTo) {
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityDestroyPacket(new IntArrayList(entities)).sendPacket(sendTo);
+    }
+
+    public static void sendRotateHeadPacket(int entityId, Location location, List<Player> sendTo) {
+        NMSHandlers.getHandler().getPacketBuilder().buildEntityRotateHeadPacket(entityId, location.getYaw()).sendPacket(sendTo);
+    }
+
+    /*
     // For future transition to display entities
     public static void sendDisplayEntityMetadataPacket(
             int entityid,
@@ -306,14 +360,10 @@ public class HMCCPacketManager extends PacketManager {
                 sendTo
         );
     }
+    */
 
-    /**
-     * Gets the nearby players (or viewers) of a location through the view distance set in the config. If the view distance is 0, it will return all players in the world.
-     * @param location
-     * @return
-     */
     @NotNull
     public static List<Player> getViewers(@NotNull Location location) {
-        return PacketManager.getViewers(location, Settings.getViewDistance());
+        return new ArrayList<>(HMCCosmeticsPlugin.getInstance().getPlayerSearchManager().getPlayersInRange(location, Settings.getViewDistance()));
     }
 }

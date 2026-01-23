@@ -1,17 +1,11 @@
 package com.hibiscusmc.hmccosmetics.user.manager;
 
-import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
-import com.hibiscusmc.hmccosmetics.user.CosmeticUsers;
-import com.hibiscusmc.hmccosmetics.util.HMCCPlayerUtils;
-import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import com.hibiscusmc.hmccosmetics.util.packets.HMCCPacketManager;
 import lombok.Getter;
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -26,6 +20,7 @@ public class UserBalloonPufferfish extends UserEntity {
     public UserBalloonPufferfish(UUID owner, int pufferFishEntityId, UUID uuid) {
         super(owner);
         this.pufferFishEntityId = pufferFishEntityId;
+        setIds(List.of(pufferFishEntityId));
         this.uuid = uuid;
     }
 
@@ -35,13 +30,18 @@ public class UserBalloonPufferfish extends UserEntity {
     }
 
     public void spawnPufferfish(Location location, List<Player> sendTo) {
-        HMCCPacketManager.sendEntitySpawnPacket(location, pufferFishEntityId, EntityType.PUFFERFISH, uuid, sendTo);
-        HMCCPacketManager.sendInvisibilityPacket(pufferFishEntityId, sendTo);
+        HMCCPacketManager.spawnInvisibleEntity(pufferFishEntityId, EntityType.PUFFERFISH, location, uuid, sendTo);
     }
 
     public void destroyPufferfish() {
         HMCCPacketManager.sendEntityDestroyPacket(pufferFishEntityId, getViewers());
         getViewers().clear();
+        destroyed = true;
+    }
+
+    public void destroyPufferfish(List<Player> viewers) {
+        HMCCPacketManager.sendEntityDestroyPacket(pufferFishEntityId, viewers);
+        //getViewers().clear();
         destroyed = true;
     }
 

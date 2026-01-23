@@ -2,10 +2,12 @@ package com.hibiscusmc.hmccosmetics.cosmetic.types;
 
 import com.hibiscusmc.hmccosmetics.config.Settings;
 import com.hibiscusmc.hmccosmetics.cosmetic.Cosmetic;
+import com.hibiscusmc.hmccosmetics.cosmetic.behavior.CosmeticUpdateBehavior;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
 import com.hibiscusmc.hmccosmetics.util.HMCCInventoryUtils;
 import com.hibiscusmc.hmccosmetics.util.packets.HMCCPacketManager;
-import me.lojosho.hibiscuscommons.util.packets.PacketManager;
+import io.papermc.paper.datacomponent.DataComponentTypes;
+import me.lojosho.hibiscuscommons.HibiscusCommonsPlugin;
 import me.lojosho.shaded.configurate.ConfigurationNode;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Entity;
@@ -15,8 +17,7 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
-public class CosmeticArmorType extends Cosmetic {
-
+public class CosmeticArmorType extends Cosmetic implements CosmeticUpdateBehavior {
     private final EquipmentSlot equipSlot;
 
     public CosmeticArmorType(String id, ConfigurationNode config) {
@@ -31,7 +32,7 @@ public class CosmeticArmorType extends Cosmetic {
     }
 
     @Override
-    protected void doUpdate(@NotNull CosmeticUser user) {
+    public void dispatchUpdate(@NotNull CosmeticUser user) {
         if (user.isInWardrobe()) return;
         Entity entity = Bukkit.getEntity(user.getUniqueId());
         if (entity == null) return;
@@ -40,7 +41,7 @@ public class CosmeticArmorType extends Cosmetic {
         }
         ItemStack item = getItem(user);
         if (item == null) return;
-        PacketManager.equipmentSlotUpdate(entity.getEntityId(), equipSlot, item, HMCCPacketManager.getViewers(entity.getLocation()));
+        HMCCPacketManager.equipmentSlotUpdate(entity.getEntityId(), equipSlot, item, HMCCPacketManager.getViewers(entity.getLocation()));
     }
 
     public ItemStack getItem(@NotNull CosmeticUser user) {
@@ -48,10 +49,24 @@ public class CosmeticArmorType extends Cosmetic {
     }
 
     public ItemStack getItem(@NotNull CosmeticUser user, ItemStack cosmeticItem) {
-        if (!(user.getEntity() instanceof HumanEntity humanEntity)) return null;
+        Player player = user.getPlayer();
+        if (player == null) return null;
+
+        ItemStack physicalEquippedItem = player.getInventory().getItem(equipSlot);
         if (Settings.getSlotOption(equipSlot).isAddEnchantments()) {
-            ItemStack equippedItem = humanEntity.getInventory().getItem(equipSlot);
-            cosmeticItem.addUnsafeEnchantments(equippedItem.getEnchantments());
+            cosmeticItem.addUnsafeEnchantments(physicalEquippedItem.getEnchantments());
+        }
+        if (Settings.getSlotOption(equipSlot).isAddElytraComponent()
+                && HibiscusCommonsPlugin.isOnPaper()
+                && physicalEquippedItem.hasData(DataComponentTypes.GLIDER)) {
+            cosmeticItem.setData(DataComponentTypes.GLIDER);
+        }
+        if (Settings.getSlotOption(equipSlot).isItemDamagePassThrough()
+        && HibiscusCommonsPlugin.isOnPaper()) {
+            if (physicalEquippedItem.hasData(DataComponentTypes.MAX_DAMAGE))
+                cosmeticItem.setData(DataComponentTypes.MAX_DAMAGE, physicalEquippedItem.getData(DataComponentTypes.MAX_DAMAGE));
+            if (physicalEquippedItem.hasData(DataComponentTypes.DAMAGE))
+                cosmeticItem.setData(DataComponentTypes.DAMAGE, physicalEquippedItem.getData(DataComponentTypes.DAMAGE));
         }
         // Basically, if force offhand is off AND there is no item in an offhand slot, then the equipment packet to add the cosmetic
         return cosmeticItem;

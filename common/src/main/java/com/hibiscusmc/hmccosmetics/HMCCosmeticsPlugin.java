@@ -3,7 +3,8 @@ package com.hibiscusmc.hmccosmetics;
 import com.hibiscusmc.hmccosmetics.api.events.HMCCosmeticSetupEvent;
 import com.hibiscusmc.hmccosmetics.command.CosmeticCommand;
 import com.hibiscusmc.hmccosmetics.command.CosmeticCommandTabComplete;
-import com.hibiscusmc.hmccosmetics.config.DatabaseSettings;
+import com.hibiscusmc.hmccosmetics.config.migration.WardrobeMigration;
+import com.hibiscusmc.hmccosmetics.config.section.DatabaseSettings;
 import com.hibiscusmc.hmccosmetics.config.Settings;
 import com.hibiscusmc.hmccosmetics.config.WardrobeSettings;
 import com.hibiscusmc.hmccosmetics.cosmetic.Cosmetic;
@@ -11,25 +12,29 @@ import com.hibiscusmc.hmccosmetics.cosmetic.Cosmetics;
 import com.hibiscusmc.hmccosmetics.database.Database;
 import com.hibiscusmc.hmccosmetics.gui.Menu;
 import com.hibiscusmc.hmccosmetics.gui.Menus;
+import com.hibiscusmc.hmccosmetics.gui.special.DyeMenuProvider;
+import com.hibiscusmc.hmccosmetics.gui.special.impl.HMCColorDyeMenu;
+import com.hibiscusmc.hmccosmetics.gui.special.impl.InternalDyeMenu;
 import com.hibiscusmc.hmccosmetics.hooks.items.HookHMCCosmetics;
 import com.hibiscusmc.hmccosmetics.hooks.misc.HookBetterHud;
 import com.hibiscusmc.hmccosmetics.hooks.placeholders.HMCPlaceholderExpansion;
 import com.hibiscusmc.hmccosmetics.hooks.worldguard.WGHook;
 import com.hibiscusmc.hmccosmetics.hooks.worldguard.WGListener;
-import com.hibiscusmc.hmccosmetics.listener.PaperPlayerGameListener;
-import com.hibiscusmc.hmccosmetics.listener.PlayerConnectionListener;
-import com.hibiscusmc.hmccosmetics.listener.PlayerGameListener;
-import com.hibiscusmc.hmccosmetics.listener.ServerListener;
+import com.hibiscusmc.hmccosmetics.listener.*;
 import com.hibiscusmc.hmccosmetics.packets.CosmeticPacketInterface;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUsers;
+import com.hibiscusmc.hmccosmetics.util.search.PlayerSearchManager;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import com.hibiscusmc.hmccosmetics.util.TranslationUtil;
+import lombok.Getter;
 import me.lojosho.hibiscuscommons.HibiscusCommonsPlugin;
 import me.lojosho.hibiscuscommons.HibiscusPlugin;
 import me.lojosho.hibiscuscommons.config.serializer.ItemSerializer;
 import me.lojosho.hibiscuscommons.config.serializer.LocationSerializer;
+import me.lojosho.hibiscuscommons.hooks.Hooks;
 import me.lojosho.shaded.configupdater.common.config.CommentedConfiguration;
+import me.lojosho.shaded.configurate.CommentedConfigurationNode;
 import me.lojosho.shaded.configurate.ConfigurateException;
 import me.lojosho.shaded.configurate.ConfigurationOptions;
 import me.lojosho.shaded.configurate.yaml.NodeStyle;
@@ -47,6 +52,9 @@ public final class HMCCosmeticsPlugin extends HibiscusPlugin {
 
     private static HMCCosmeticsPlugin instance;
     private static YamlConfigurationLoader configLoader;
+
+    @Getter
+    private PlayerSearchManager playerSearchManager;
 
     public HMCCosmeticsPlugin() {
         super(13873, 1879);
@@ -70,6 +78,13 @@ public final class HMCCosmeticsPlugin extends HibiscusPlugin {
             saveResource("menus/defaultmenu_hands.yml", false);
             saveResource("menus/defaultmenu_backpacks.yml", false);
         }
+        if (!Path.of(getDataFolder().getPath() + "/menus/functional/internal_dye_menu.yml").toFile().exists()) {
+            saveResource("menus/functional/internal_dye_menu.yml", false);
+        }
+        if (!Path.of(getDataFolder().getPath() + "/wardrobes/").toFile().exists()) {
+            saveResource("wardrobes/defaultwardrobe.yml", false);
+            WardrobeMigration.migrate(this);
+        }
 
         // Configuration Sync
         final File configFile = Path.of(getInstance().getDataFolder().getPath(), "config.yml").toFile();
@@ -87,9 +102,24 @@ public final class HMCCosmeticsPlugin extends HibiscusPlugin {
         // Move this over to Hibiscus Commons later
         if (Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) new HMCPlaceholderExpansion().register();
 
+        // HMCColor
+        try {
+            if (Settings.isPreferHMCColorDyeMenu() && Hooks.isActiveHook("HMCColor")) {
+                DyeMenuProvider.setDyeMenuProvider(new HMCColorDyeMenu());
+            } else {
+                DyeMenuProvider.setDyeMenuProvider(new InternalDyeMenu());
+            }
+            // Reload method called in setup, do not need to call it here as all we do is set the provider.
+        } catch (IllegalStateException e) {
+            getLogger().warning("Unable to set a dye menu. There is likely another plugin registering another dye menu.");
+        }
+
         // Setup
         setup();
         setPacketInterface(new CosmeticPacketInterface());
+
+        // Search Service
+        this.playerSearchManager = new PlayerSearchManager(Settings.getEngine(), this);
 
         // Commands
         getServer().getPluginCommand("cosmetic").setExecutor(new CosmeticCommand());
@@ -99,6 +129,8 @@ public final class HMCCosmeticsPlugin extends HibiscusPlugin {
         getServer().getPluginManager().registerEvents(new PlayerConnectionListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerGameListener(), this);
         getServer().getPluginManager().registerEvents(new ServerListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerMovementListener(), this);
+        getServer().getPluginManager().registerEvents(this.playerSearchManager.getEngine(), this);
 
         if (HibiscusCommonsPlugin.isOnPaper()) {
             getServer().getPluginManager().registerEvents(new PaperPlayerGameListener(), this);
@@ -197,6 +229,9 @@ public final class HMCCosmeticsPlugin extends HibiscusPlugin {
 
         // Menus setup
         Menus.setup();
+
+        // Dye Menu Reload
+        DyeMenuProvider.reload();
 
         // For reloads
         /*

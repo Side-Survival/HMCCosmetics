@@ -1,7 +1,9 @@
 package com.hibiscusmc.hmccosmetics.config;
 
 import com.hibiscusmc.hmccosmetics.HMCCosmeticsPlugin;
+import com.hibiscusmc.hmccosmetics.config.section.SlotOptionConfig;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
+import com.hibiscusmc.hmccosmetics.util.search.PlayerSearchManager;
 import lombok.Getter;
 import lombok.Setter;
 import me.lojosho.shaded.configurate.ConfigurationNode;
@@ -43,10 +45,11 @@ public class Settings {
     private static final String HOOK_WG_MOVE_CHECK_PATH = "player-move-check";
     private static final String HOOK_WG_MOVE_CHECK_PATH_LEGACY = "player_move_check";
     private static final String COSMETIC_DISABLED_WORLDS_PATH = "disabled-worlds";
-    private static final String COSMETIC_PACKET_ENTITY_TELEPORT_COOLDOWN_PATH = "entity-cooldown-teleport-packet";
     private static final String COSMETIC_BACKPACK_FORCE_RIDING_PACKET_PATH = "backpack-force-riding-packet";
+    private static final String COSMETIC_BACKPACK_INTERCEPT_PASSENGER_PACKET_PATH = "backpack-intercept-passenger-packets";
     private static final String COSMETIC_DESTROY_LOOSE_COSMETIC_PATH = "destroy-loose-cosmetics";
     private static final String COSMETIC_BALLOON_HEAD_FORWARD_PATH = "balloon-head-forward";
+    private static final String COSMETIC_OFFHAND_PREVENT_SWAPPING = "offhand-prevent-swapping";
     private static final String MENU_SETTINGS_PATH = "menu-settings";
     private static final String MENU_CLICK_COOLDOWN_PATH = "click-cooldown";
     private static final String MENU_CLICK_COOLDOWN_TIME_PATH = "time";
@@ -68,6 +71,9 @@ public class Settings {
     private static final String BACKPACK_PREVENT_DARKNESS_PATH = "backpack-prevent-darkness";
     private static final String BETTER_HUD_PATH = "betterhud";
     private static final String BETTER_HUD_HIDE_IN_WARDROBE_PATH = "wardrobe-hide";
+    private static final String HOOK_HMCCOLOR_PATH = "hmccolor";
+    private static final String HMCCOLOR_PREFER_DYE_MENU = "prefer-hmccolor-menu";
+    private static final String PLAYER_SEARCH_IMPLEMENTATION = "player-search-implmentation";
     private static final String UNAVAILABLE_ITEM_MATERIAL_PATH = "unavailable-item-material";
     private static final String UNAVAILABLE_ITEM_DATA_PATH = "unavailable-item-model-data";
 
@@ -103,13 +109,19 @@ public class Settings {
     @Getter
     private static boolean destroyLooseCosmetics;
     @Getter
+    private static boolean preventOffhandSwapping;
+    @Getter
     private static boolean backpackForceRidingEnabled;
+    @Getter
+    private static boolean backpackInterceptPassengerPacket;
     @Getter
     private static boolean disabledGamemodesEnabled;
     @Getter
     private static boolean balloonHeadForward;
     @Getter
     private static boolean backpackPreventDarkness;
+    @Getter
+    private static boolean preferHMCColorDyeMenu;
     @Getter
     private static List<String> disabledGamemodes;
     @Getter
@@ -119,13 +131,9 @@ public class Settings {
     @Getter
     private static int tickPeriod;
     @Getter
-    private static int packetEntityTeleportCooldown;
-    @Getter
     private static Long defaultMenuCooldown;
     @Getter
     private static boolean menuClickCooldown;
-    @Getter
-    private static double emoteDistance;
     @Getter
     private static Vector balloonOffset;
     @Getter
@@ -156,6 +164,10 @@ public class Settings {
     private static boolean allPlayersHidden;
     @Getter
     private static boolean wardrobeHideHud;
+    @Getter
+    private static boolean dyeMenuEnabled;
+    @Getter
+    private static PlayerSearchManager.SearchEngine engine;
     @Getter
     private static String unavailableItemMaterial;
     @Getter
@@ -198,6 +210,8 @@ public class Settings {
         forceShowOnJoin = cosmeticSettings.node(FORCE_SHOW_COSMETICS_PATH).getBoolean(false);
         destroyLooseCosmetics = cosmeticSettings.node(COSMETIC_DESTROY_LOOSE_COSMETIC_PATH).getBoolean(false);
         backpackForceRidingEnabled = cosmeticSettings.node(COSMETIC_BACKPACK_FORCE_RIDING_PACKET_PATH).getBoolean(false);
+        backpackInterceptPassengerPacket = cosmeticSettings.node(COSMETIC_BACKPACK_INTERCEPT_PASSENGER_PACKET_PATH).getBoolean(true);
+        preventOffhandSwapping = cosmeticSettings.node(COSMETIC_OFFHAND_PREVENT_SWAPPING).getBoolean(false);
 
         cosmeticSettings.node(SLOT_OPTIONS_PATH).childrenMap().forEach((key, value) -> {
             EquipmentSlot slot = convertConfigToEquipment(key.toString().toLowerCase());
@@ -207,12 +221,14 @@ public class Settings {
             }
             boolean addEnchantments = value.node("add-enchantments").getBoolean(false);
             boolean requireEmpty = value.node("require-empty").getBoolean(false);
-            slotOptions.put(slot, new SlotOptionConfig(slot, addEnchantments, requireEmpty));
+            boolean addElytraComponent = value.node("add-elytra-componnt").getBoolean(true);
+            boolean attemptDamagePassthrough = value.node("passthrough-damage").getBoolean(true);
+            slotOptions.put(slot, new SlotOptionConfig(slot, addEnchantments, requireEmpty, addElytraComponent, attemptDamagePassthrough));
         });
 
         tickPeriod = cosmeticSettings.node(TICK_PERIOD_PATH).getInt(-1);
+        engine = PlayerSearchManager.SearchEngine.valueOf(cosmeticSettings.node(PLAYER_SEARCH_IMPLEMENTATION).getString("BUKKIT").toUpperCase());
         viewDistance = cosmeticSettings.node(VIEW_DISTANCE_PATH).getInt(-3);
-        packetEntityTeleportCooldown = cosmeticSettings.node(COSMETIC_PACKET_ENTITY_TELEPORT_COOLDOWN_PATH).getInt(-1);
         balloonHeadForward = cosmeticSettings.node(COSMETIC_BALLOON_HEAD_FORWARD_PATH).getBoolean(false);
         backpackPreventDarkness = cosmeticSettings.node(BACKPACK_PREVENT_DARKNESS_PATH).getBoolean(true);
 
@@ -246,6 +262,7 @@ public class Settings {
         dyeMenuName = dyeMenuSettings.node(DYE_MENU_NAME).getString("Dye Menu");
         dyeMenuInputSlot = dyeMenuSettings.node(DYE_MENU_INPUT_SLOT).getInt(19);
         dyeMenuOutputSlot = dyeMenuSettings.node(DYE_MENU_OUTPUT_SLOT).getInt(25);
+        dyeMenuEnabled = dyeMenuSettings.node(ENABLED_PATH).getBoolean(true);
 
         ConfigurationNode hookSettings = source.node(HOOK_SETTING_PATH);
 
@@ -257,6 +274,9 @@ public class Settings {
 
         ConfigurationNode betterHudSettings = hookSettings.node(BETTER_HUD_PATH);
         wardrobeHideHud = betterHudSettings.node(BETTER_HUD_HIDE_IN_WARDROBE_PATH).getBoolean(true);
+
+        ConfigurationNode hmccolorSettings = hookSettings.node(HOOK_HMCCOLOR_PATH);
+        preferHMCColorDyeMenu = hmccolorSettings.node(HMCCOLOR_PREFER_DYE_MENU).getBoolean(false);
 
         ConfigurationNode worldGuardSettings = hookSettings.node(HOOK_WORLDGUARD_PATH);
         worldGuardMoveCheck = worldGuardSettings.node(HOOK_WG_MOVE_CHECK_PATH).getBoolean(true);
@@ -275,7 +295,7 @@ public class Settings {
     }
 
     public static SlotOptionConfig getSlotOption(EquipmentSlot slot) {
-        if (!slotOptions.containsKey(slot)) slotOptions.put(slot, new SlotOptionConfig(slot, false, false));
+        if (!slotOptions.containsKey(slot)) slotOptions.put(slot, new SlotOptionConfig(slot, false, false, false, false));
         return slotOptions.get(slot);
     }
 

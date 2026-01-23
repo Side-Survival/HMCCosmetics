@@ -2,6 +2,8 @@ package com.hibiscusmc.hmccosmetics.cosmetic.types;
 
 import com.hibiscusmc.hmccosmetics.config.Settings;
 import com.hibiscusmc.hmccosmetics.cosmetic.Cosmetic;
+import com.hibiscusmc.hmccosmetics.cosmetic.behavior.CosmeticMovementBehavior;
+import com.hibiscusmc.hmccosmetics.cosmetic.behavior.CosmeticUpdateBehavior;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
 import com.hibiscusmc.hmccosmetics.user.manager.UserBalloonManager;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
@@ -18,7 +20,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class CosmeticBalloonType extends Cosmetic {
+public class CosmeticBalloonType extends Cosmetic implements CosmeticUpdateBehavior, CosmeticMovementBehavior {
 
     @Getter
     private final String modelName;
@@ -54,7 +56,7 @@ public class CosmeticBalloonType extends Cosmetic {
     }
 
     @Override
-    protected void doUpdate(@NotNull CosmeticUser user) {
+    public void dispatchUpdate(@NotNull CosmeticUser user) {
         Entity entity = Bukkit.getEntity(user.getUniqueId());
         UserBalloonManager userBalloonManager = user.getBalloonManager();
 
@@ -63,6 +65,29 @@ public class CosmeticBalloonType extends Cosmetic {
 
         if (!userBalloonManager.getModelEntity().isValid()) {
             user.respawnBalloon();
+            return;
+        }
+
+        Location newLocation = entity.getLocation();
+        newLocation = newLocation.clone().add(getBalloonOffset());
+        if (Settings.isBalloonHeadForward()) newLocation.setPitch(0);
+
+        if (!user.isHidden() && showLead) {
+            List<Player> sendTo = userBalloonManager.getPufferfish().refreshViewers(newLocation);
+            if (sendTo.isEmpty()) return;
+            user.getBalloonManager().getPufferfish().spawnPufferfish(newLocation, sendTo);
+        }
+    }
+
+    @Override
+    public void dispatchMove(@NotNull CosmeticUser user, @NotNull Location from, @NotNull Location to) {
+        Entity entity = Bukkit.getEntity(user.getUniqueId());
+        UserBalloonManager userBalloonManager = user.getBalloonManager();
+
+        if (entity == null || userBalloonManager == null) return;
+        if (user.isInWardrobe()) return;
+
+        if (!userBalloonManager.getModelEntity().isValid()) {
             return;
         }
 
@@ -90,15 +115,6 @@ public class CosmeticBalloonType extends Cosmetic {
 
         HMCCPacketManager.sendTeleportPacket(userBalloonManager.getPufferfishBalloonId(), newLocation, false, viewer);
         HMCCPacketManager.sendLeashPacket(userBalloonManager.getPufferfishBalloonId(), entity.getEntityId(), viewer);
-        if (user.isHidden()) {
-            userBalloonManager.getPufferfish().hidePufferfish();
-            return;
-        }
-        if (!user.isHidden() && showLead) {
-            List<Player> sendTo = userBalloonManager.getPufferfish().refreshViewers(newLocation);
-            if (sendTo.isEmpty()) return;
-            user.getBalloonManager().getPufferfish().spawnPufferfish(newLocation, sendTo);
-        }
     }
 
     public boolean isDyeablePart(String name) {

@@ -6,29 +6,43 @@ config-version: 1
 default-menu: defaultmenu_hats
 debug-mode: false
 database-settings:
-  type: sqlite # SQLite (Default), MYSQL, NONE
+  # SQLite (Default), MYSQL, NONE
+  type: sqlite
   mysql:
-    database: database
-    password: cherryBomb
+    database: "database"
+    password: "cherryBomb"
     port: 3306
-    host: localhost
-    user: username
+    host: "localhost"
+    user: "username"
   delay:
-    enabled: false # This is for if other plugins need to handle certain aspects of a player first.
-    delay: 20 # In ticks
+    # This is for if other plugins need to handle certain aspects of a player first.
+    enabled: false
+    # Delay in ticks from when a player joins
+    delay: 20
 cosmetic-settings:
-  tick-period: 20 # In ticks, determines how many times a player cosmetics should be updated. -1 to disable.
+  # In ticks, determines how many times a player cosmetics should be updated. -1 to disable.
   # Ticking periods is something that ensures new players near a player get the packets to actually apply to the user.
+  tick-period: 20
 
-  unapply-on-death: false # If when a player dies, their cosmetics should be unapplied. If this is true, use hmccosmetics.unapplydeath.bypass to bypass
-  force-permission-join: true # Checks a player permission if they can have a cosmetic when they join the server.
-  force-show-join: false # If the plugin should force show a player's cosmetics when they join the server.
+  # The engine HMCCosmetics will use to find nearby players.
+  # Valid Options: BUKKIT, OCTREE
+  player-search-implmentation: BUKKIT
+
+  # If when a player dies, their cosmetics should be unapplied. If this is true, use hmccosmetics.unapplydeath.bypass to bypass
+  unapply-on-death: false
+  # Checks a player permission if they can have a cosmetic when they join the server.
+  force-permission-join: true
+  # If the plugin should attempt to force show a player's cosmetics when they join the server by removing all hidden flags.
+  force-show-join: false
 
   # This determines what to process what areas to process placeholders when displaying the item to the user.
   # This can be heavy on servers with a lot of players, so if experiencing lag issues relating to setting display/lores of items, disable this.
   item-processing:
-    display-name: true
-    lore: true
+    display-name: false
+    lore: false
+
+  # This prevents the offhand from being swapped with the mainhand. Only affects if a user has a cosmetic in their offhand
+  offhand-prevent-swapping: false
 
   # This is a list of worlds that cosmetics are hidden in. When a player enters one of these worlds, their cosmetics will be hidden.
   disabled-worlds:
@@ -41,13 +55,11 @@ cosmetic-settings:
       - "SPECTATOR"
 
   # This make it so it always sends the riding packets for the backpack. This sends more packets but is more reliable for servers which modify player passengers.
-  backpack-force-riding-packet: false
+  backpack-force-riding-packet: true
   # This prevents the backpack from being dark when the player is below a block at the expense of making the backpack bright
   backpack-prevent-darkness: true
-  # This helps reduce the amount of packets sent for packet entities, but reduces accuracy of the entity. This is in milliseconds. -1 to disable.
-  # This is useful for servers with a lot of backpacks, as they are passengers, which means the client will update their position automatically within an area where the entity is located.
-  entity-cooldown-teleport-packet: 500
-  # This forces the offhand to always show the cosmetic. False means it will only show when the slot is empty.
+  # Intercepts packets to attempt to reorder them to properly handle the backpack
+  backpack-intercept-passenger-packets: false
 
   slot-options:
     helmet:
@@ -55,19 +67,25 @@ cosmetic-settings:
       add-enchantments: false
       # Should the player slot be empty for the cosmetic to be applied? A cosmetic will be "hidden" if a player has an item equipped in the slot
       require-empty: false
+      passthrough-damage: false
     chestplate:
       add-enchantments: false
       require-empty: false
+      add-elytra-componnt: true
+      passthrough-damage: false
     leggings:
       add-enchantments: false
       require-empty: false
+      passthrough-damage: false
     boots:
       add-enchantments: false
       require-empty: false
+      passthrough-damage: false
     offhand:
       add-enchantments: false
       # There is a small visual blip for a tick when you put a new item in the offhand slot, hence why its enabled by default.
       require-empty: true
+      passthrough-damage: false
 
   # This attempts to destroy cosmetics that get loose in the wild, such as through a player entering creative mode.
   # Most servers who don't use creative mode and have properly set up the plugin should have no need for this and can leave it disabled.
@@ -85,6 +103,7 @@ cosmetic-settings:
     x: 0.5
     y: 3
     z: 0.5
+
 menu-settings:
   click-cooldown:
     enabled: true
@@ -95,24 +114,25 @@ menu-settings:
     # Below is the shading mechanism behind cosmetic items. This is a bit complicated, but it allows for a lot of customization.
     # The shading is done through the title and by shifting textures around. This is done by offsets.
     # Only Nexo is support by default. Vanilla can't properly handle it without a lot of unicodes and ItemsAdder adds weird offsets and decolors it. (This is why it is disabled by default)
-    enabled: true # Default of menus having shading. This can be toggled individually in menus with "shading: true/false"
+    enabled: false # Default of menus having shading. This can be toggled individually in menus with "shading: true/false"
     first-row-shift: "<shift:-153>" # Nexo: "<shift:-153>"
     sequent-row-shift: " <shift:-153>" # Nexo: " <shift:-153>" (Space is important here!)
     individual-column-shift: "<shift:-3>" # Nexo: "<shift:-3>"
-    background: "<glyph:shade_row_<row>:colorable> " # Nexo: "<glyph:shade_row_<row>:colorable>
-    clear-background: "<glyph:clear_row_<row>:colorable> " # Nexo: "<glyph:clear_row_<row>:colorable> "
+    background: "<glyph:hmcc_shade_row_<row>:colorable> " # Nexo: "<glyph:shade_row_<row>:colorable>
+    clear-background: "<glyph:hmcc_clear_row_<row>:colorable> " # Nexo: "<glyph:clear_row_<row>:colorable> "
     #These use MiniMessage for color! https://docs.advntr.dev/minimessage/format.html#color
     equipped-cosmetic-color: "<yellow>"
     equipable-cosmetic-color: "<green>"
     locked-cosmetic-color: "<red>"
   cosmetic-type:
     # This allows you to specify if it should require a special click type for the interaction to work.
-    equip-click: "ANY" # ANY or ClickType, https://jd.papermc.io/paper/1.20/org/bukkit/event/inventory/ClickType.html
-    unequip-click: "ANY" # ANY or ClickType, https://jd.papermc.io/paper/1.20/org/bukkit/event/inventory/ClickType.html
+    equip-click: "ANY" # ANY or ClickType, https://jd.papermc.io/paper/org/bukkit/event/inventory/ClickType.html
+    unequip-click: "ANY" # ANY or ClickType, https://jd.papermc.io/paper/org/bukkit/event/inventory/ClickType.html
 dye-menu:
-  # If you use ItemsAdder, set this to "<white>:img_offset_-8::img_dye_menu:"
-  # If you use Oraxen, set this to "<white><s:-8><g:dye_menu>"
-  # If you use Nexo, set this to "<white><shift:-8><glyph:dye_menu>"
+  enabled: true
+  # If you use ItemsAdder, set this to "<white>:img_offset_-8::img_hmcc_dye_menu:"
+  # If you use Oraxen, set this to "<white><s:-8><g:hmcc_dye_menu>"
+  # If you use Nexo, set this to "<white><shift:-8><glyph:hmcc_dye_menu>"
   title: "<white>"
   input-slot: 10
   output-slot: 16
@@ -122,7 +142,8 @@ hook-settings:
     # could cause console spam as HMCCosmetics has to reload itself as well.
     reload-on-change: false
   nexo:
-    # This causes the plugin to reload itself after any Nexo change. This keeps the plugin fully up to date with Nexo
+    # This causes the plugin to reload itself after any Nexo change. This keeps the plugin fully up to date with Nexo, but
+    # could cause console spam as HMCCosmetics has to reload itself as well.
     reload-on-change: true
   worldguard:
     # Checks worldguard regions for HMCC flags. If set to false, flags will not work properly.
@@ -130,6 +151,9 @@ hook-settings:
     player-move-check: true
   betterhud:
     wardrobe-hide: true
+  hmccolor:
+    # If HMCColor is available, prefer hmccolor dye menu rather than the internal menu. Requires a restart.
+    prefer-hmccolor-menu: false
 unavailable-item-material: BARRIER
 unavailable-item-model-data: 0
 wardrobe:
@@ -170,29 +194,3 @@ wardrobe:
     title-fade-in: 1000 # milliseconds
     title-stay: 500 # milliseconds
     title-fade-out: 1000 # milliseconds
-  wardrobes:
-    default:
-      distance: -1 # Distance in blocks that a player can interact with the wardrobe. -1 to ignore.
-      permission: "hmccosmetics.wardrobe.default" # Permission required to use the wardrobe.
-      default-menu: defaultmenu
-      npc-location:
-        world: "world"
-        x: 0
-        y: 0
-        z: 0
-        yaw: 0
-        pitch: 0
-      viewer-location:
-        world: "world"
-        x: 5
-        y: 0
-        z: 5
-        yaw: 0
-        pitch: 0
-      leave-location:
-        world: "world"
-        x: 5
-        y: 5
-        z: 5
-        yaw: 0
-        pitch: 0

@@ -5,15 +5,16 @@ import com.google.common.collect.ImmutableList;
 import com.hibiscusmc.hmccosmetics.HMCCosmeticsPlugin;
 import com.hibiscusmc.hmccosmetics.api.events.*;
 import com.hibiscusmc.hmccosmetics.config.Settings;
-import com.hibiscusmc.hmccosmetics.config.Wardrobe;
 import com.hibiscusmc.hmccosmetics.config.WardrobeSettings;
+import com.hibiscusmc.hmccosmetics.config.section.Wardrobe;
 import com.hibiscusmc.hmccosmetics.cosmetic.Cosmetic;
 import com.hibiscusmc.hmccosmetics.cosmetic.CosmeticHolder;
 import com.hibiscusmc.hmccosmetics.cosmetic.CosmeticSlot;
+import com.hibiscusmc.hmccosmetics.cosmetic.behavior.CosmeticMovementBehavior;
+import com.hibiscusmc.hmccosmetics.cosmetic.behavior.CosmeticUpdateBehavior;
 import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticArmorType;
 import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticBackpackType;
 import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticBalloonType;
-import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticMainhandType;
 import com.hibiscusmc.hmccosmetics.database.UserData;
 import com.hibiscusmc.hmccosmetics.gui.Menus;
 import com.hibiscusmc.hmccosmetics.user.manager.UserBackpackManager;
@@ -22,23 +23,23 @@ import com.hibiscusmc.hmccosmetics.user.manager.UserWardrobeManager;
 import com.hibiscusmc.hmccosmetics.util.HMCCInventoryUtils;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import com.hibiscusmc.hmccosmetics.util.packets.HMCCPacketManager;
-import com.ticxo.modelengine.api.nms.NMSHandler;
 import lombok.Getter;
 import me.lojosho.hibiscuscommons.hooks.Hooks;
 import me.lojosho.hibiscuscommons.nms.NMSHandlers;
 import me.lojosho.hibiscuscommons.util.InventoryUtils;
-import me.lojosho.hibiscuscommons.util.packets.PacketManager;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
-import org.bukkit.FireworkEffect;
+import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.HumanEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.*;
+import org.bukkit.inventory.meta.ItemMeta;
+import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -53,7 +54,7 @@ public class CosmeticUser implements CosmeticHolder {
     private final HashMap<CosmeticSlot, Cosmetic> playerCosmetics = new HashMap<>();
     private UserWardrobeManager userWardrobeManager;
     private UserBalloonManager userBalloonManager;
-    @Getter
+    @Getter @Nullable
     private UserBackpackManager userBackpackManager;
 
     // Cosmetic Settings/Toggles
@@ -98,7 +99,7 @@ public class CosmeticUser implements CosmeticHolder {
                 Color color = null;
                 if (colorRGBInt != -1) color = Color.fromRGB(colorRGBInt); // -1 is defined as no color; anything else is a color
 
-                this.addPlayerCosmetic(cosmetic, color);
+                this.addCosmetic(cosmetic, color);
             }
             this.applyHiddenState(userData.getHiddenReasons());
         }
@@ -111,7 +112,7 @@ public class CosmeticUser implements CosmeticHolder {
      * This is used to help hooking plugins apply custom logic to the user.
      */
     protected boolean applyCosmetic(@NotNull Cosmetic cosmetic, @Nullable Color color) {
-        this.addPlayerCosmetic(cosmetic, color);
+        this.addCosmetic(cosmetic, color);
         return true;
     }
 
@@ -151,6 +152,11 @@ public class CosmeticUser implements CosmeticHolder {
             MessagesUtil.sendDebugMessages("Showing Cosmetics due to world");
             showCosmetics(HiddenReason.WORLD);
         }
+
+        if (bukkitPlayer != null && bukkitPlayer.hasPotionEffect(PotionEffectType.INVISIBILITY)) {
+            hideCosmetics(HiddenReason.POTION);
+        }
+
         if (Settings.isAllPlayersHidden()) {
             hideCosmetics(HiddenReason.DISABLED);
         }
@@ -295,23 +301,52 @@ public class CosmeticUser implements CosmeticHolder {
     }
 
     @Override
-    public void updateCosmetic(@NotNull CosmeticSlot slot) {
-        Cosmetic cosmetic = playerCosmetics.get(slot);
-        if (cosmetic != null) {
-            cosmetic.update(this);
+    public boolean updateCosmetic(@NotNull CosmeticSlot slot) {
+        final Cosmetic cosmetic = playerCosmetics.get(slot);
+        if(cosmetic == null) {
+            return false;
         }
+
+        if(!(cosmetic instanceof CosmeticUpdateBehavior behavior)) {
+            MessagesUtil.sendDebugMessages("Attempted to update cosmetic that does not implement CosmeticUpdateBehavior");
+            return false;
+        }
+
+        behavior.dispatchUpdate(this);
+        return true;
     }
 
-    public void updateCosmetic(Cosmetic cosmetic) {
-        updateCosmetic(cosmetic.getSlot());
+    @Override
+    public boolean updateMovementCosmetic(@NotNull CosmeticSlot slot, @NotNull final Location from, @NotNull final Location to) {
+        final Cosmetic cosmetic = playerCosmetics.get(slot);
+        if(cosmetic == null) {
+            return false;
+        }
+
+        if(!(cosmetic instanceof CosmeticMovementBehavior behavior)) {
+            MessagesUtil.sendDebugMessages("Attempted to update cosmetic that does not implement CosmeticMovementBehavior");
+            return false;
+        }
+
+        behavior.dispatchMove(this, from, to);
+        return true;
+    }
+
+    public boolean updateCosmetic(@NotNull final Cosmetic cosmetic) {
+        return updateCosmetic(cosmetic.getSlot());
     }
 
     public void updateCosmetic() {
         MessagesUtil.sendDebugMessages("updateCosmetic (All) - start");
-        HashMap<EquipmentSlot, ItemStack> items = new HashMap<>();
+        final HashMap<EquipmentSlot, ItemStack> items = new HashMap<>();
 
-        for (Cosmetic cosmetic : playerCosmetics.values()) {
-            if (cosmetic instanceof CosmeticArmorType armorType) {
+        for(final Cosmetic cosmetic : playerCosmetics.values()) {
+            if(!(cosmetic instanceof CosmeticUpdateBehavior behavior)) {
+                continue;
+            }
+
+            // defers item updates to end of operation
+            if(cosmetic instanceof CosmeticArmorType armorType) {
                 if (isInWardrobe()) return;
                 if (!(getEntity() instanceof HumanEntity humanEntity)) return;
 
@@ -322,15 +357,18 @@ public class CosmeticUser implements CosmeticHolder {
 
                 items.put(HMCCInventoryUtils.getEquipmentSlot(armorType.getSlot()), armorType.getItem(this));
             } else {
-                cosmetic.update(this);
+                behavior.dispatchUpdate(this);
             }
         }
-        if (items.isEmpty() || getEntity() == null) return;
-        PacketManager.equipmentSlotUpdate(getEntity().getEntityId(), items, HMCCPacketManager.getViewers(getEntity().getLocation()));
-        MessagesUtil.sendDebugMessages("updateCosmetic (All) - end - " + items.size());
+
+        final Entity entity = this.getEntity();
+        if(!items.isEmpty() && entity != null) {
+            NMSHandlers.getHandler().getPacketBuilder().buildEntityEquipmentSlotUpdatePacket(entity.getEntityId(), items).sendPacket(HMCCPacketManager.getViewers(entity.getLocation()));
+            MessagesUtil.sendDebugMessages("updateCosmetic (All) - end - " + items.size());
+        }
     }
 
-    public ItemStack getUserCosmeticItem(CosmeticSlot slot) {
+    public ItemStack getUserCosmeticItem(@NotNull CosmeticSlot slot) {
         Cosmetic cosmetic = getCosmetic(slot);
         if (cosmetic == null) return new ItemStack(Material.AIR);
         return getUserCosmeticItem(cosmetic);
@@ -345,7 +383,7 @@ public class CosmeticUser implements CosmeticHolder {
         if (cosmetic instanceof CosmeticArmorType armorType) {
             item = armorType.getItem(this, cosmetic.getItem());
         }
-        if (cosmetic instanceof CosmeticBackpackType || cosmetic instanceof CosmeticMainhandType) {
+        if (cosmetic instanceof CosmeticBackpackType) {
             item = cosmetic.getItem();
         }
         if (cosmetic instanceof CosmeticBalloonType) {
@@ -582,7 +620,7 @@ public class CosmeticUser implements CosmeticHolder {
         EquipmentSlot equipmentSlot = HMCCInventoryUtils.getEquipmentSlot(slot);
         if (equipmentSlot == null) return;
         if (getPlayer() != null) {
-            PacketManager.equipmentSlotUpdate(getEntity().getEntityId(), equipmentSlot, getPlayer().getInventory().getItem(equipmentSlot), HMCCPacketManager.getViewers(getEntity().getLocation()));
+            HMCCPacketManager.equipmentSlotUpdate(getEntity().getEntityId(), equipmentSlot, getPlayer().getInventory().getItem(equipmentSlot), HMCCPacketManager.getViewers(getEntity().getLocation()));
         } else {
             HMCCPacketManager.equipmentSlotUpdate(getEntity().getEntityId(), this, slot, HMCCPacketManager.getViewers(getEntity().getLocation()));
         }

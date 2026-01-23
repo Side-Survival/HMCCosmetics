@@ -3,8 +3,6 @@ package com.hibiscusmc.hmccosmetics.gui;
 import com.hibiscusmc.hmccosmetics.HMCCosmeticsPlugin;
 import com.hibiscusmc.hmccosmetics.config.Settings;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
-import lombok.Getter;
-import lombok.Setter;
 import me.lojosho.shaded.configurate.CommentedConfigurationNode;
 import me.lojosho.shaded.configurate.ConfigurateException;
 import me.lojosho.shaded.configurate.yaml.YamlConfigurationLoader;
@@ -21,6 +19,8 @@ import java.util.logging.Level;
 import java.util.stream.Stream;
 
 public class Menus {
+
+    private static final List<String> FILES_TO_IGNORE = List.of("internal_dye_menu.yml");
 
     private static final HashMap<String, Menu> MENUS = new HashMap<>();
     private static final HashMap<UUID, Long> COOLDOWNS = new HashMap<>();
@@ -95,6 +95,7 @@ public class Menus {
         try (Stream<Path> walkStream = Files.walk(cosmeticFolder.toPath())) {
             walkStream.filter(p -> p.toFile().isFile()).forEach(child -> {
                 if (child.toString().endsWith("yml") || child.toString().endsWith("yaml")) {
+                    if (FILES_TO_IGNORE.contains(child.getFileName().toString())) return;
                     MessagesUtil.sendDebugMessages("Scanning " + child);
                     // Loads file
                     YamlConfigurationLoader loader = YamlConfigurationLoader.builder().path(child).build();

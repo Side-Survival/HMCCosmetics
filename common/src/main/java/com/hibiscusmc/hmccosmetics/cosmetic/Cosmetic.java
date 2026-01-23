@@ -1,5 +1,6 @@
 package com.hibiscusmc.hmccosmetics.cosmetic;
 
+import com.hibiscusmc.hmccosmetics.cosmetic.behavior.CosmeticUpdateBehavior;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import lombok.AccessLevel;
@@ -12,6 +13,7 @@ import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,8 +61,12 @@ public abstract class Cosmetic {
     /** Whether the cosmetic is dyeable or not. */
     private boolean dyeable;
 
+    /** The config for the cosmetic */
+    private ConfigurationNode config;
+
     protected Cosmetic(@NotNull String id, @NotNull ConfigurationNode config) {
         this.id = id;
+        this.config = config;
 
         if (!config.node("permission").virtual()) {
             this.permission = config.node("permission").getString();
@@ -103,19 +109,24 @@ public abstract class Cosmetic {
     }
 
     /**
-     * Dispatched when an update is requested upon the cosmetic.
+     * Dispatched when an update is requested upon the cosmetic. Instead, you should use {@link CosmeticUser#updateCosmetic(CosmeticSlot)})}
      * @param user the user to preform the update against
      */
-    public final void update(CosmeticUser user) {
-        this.doUpdate(user);
+    @Deprecated(since = "2.8.2")
+    public void update(CosmeticUser user) {
+        if(this instanceof CosmeticUpdateBehavior behavior) {
+            behavior.dispatchUpdate(user);
+        }
     }
 
     /**
-     * Action preformed on the update.
+     * Action preformed on the update. Instead, you should use {@link CosmeticUser#updateCosmetic(CosmeticSlot)})}
      * @param user the user to preform the update against
      */
+    @Deprecated(since = "2.8.2")
     protected void doUpdate(final CosmeticUser user) {
-        // NO-OP.
+        // #update should be the preferred way of interacting with this api now.
+        this.update(user);
     }
 
     @Nullable
@@ -141,5 +152,15 @@ public abstract class Cosmetic {
             MessagesUtil.sendDebugMessages("Fatal error encountered for " + getId() + " regarding Serialization of item", Level.SEVERE);
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * While cosmetics registered in HMCC are made through a configuration, cosmetics registered from other plugins
+     * may not and instead opt for {@link Cosmetic#Cosmetic(String, String, ItemStack, String, CosmeticSlot, boolean)}, which doesn't use a config.
+     * This should be used only for reference.
+     */
+    @ApiStatus.Experimental
+    public @Nullable ConfigurationNode getConfig() {
+        return config;
     }
 }

@@ -7,7 +7,7 @@ import com.hibiscusmc.hmccosmetics.cosmetic.CosmeticHolder;
 import com.hibiscusmc.hmccosmetics.cosmetic.Cosmetics;
 import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticArmorType;
 import com.hibiscusmc.hmccosmetics.gui.action.Actions;
-import com.hibiscusmc.hmccosmetics.gui.special.DyeMenu;
+import com.hibiscusmc.hmccosmetics.gui.special.DyeMenuProvider;
 import com.hibiscusmc.hmccosmetics.gui.type.Type;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
@@ -45,17 +45,26 @@ public class TypeCosmetic extends Type {
             MessagesUtil.sendDebugMessages("Cosmetic Config Field Virtual");
             return;
         }
-        String cosmeticName = config.node("cosmetic").getString();
-        Cosmetic cosmetic = Cosmetics.getCosmetic(cosmeticName);
+        final String cosmeticName = config.node("cosmetic").getString();
+        final Cosmetic cosmetic = Cosmetics.getCosmetic(cosmeticName);
         if (cosmetic == null) {
             MessagesUtil.sendDebugMessages("No Cosmetic Found");
             MessagesUtil.sendMessage(viewer, "invalid-cosmetic");
             return;
         }
 
+        final List<String> actionStrings = new ArrayList<>();
+        final ConfigurationNode actionConfig = config.node("actions");
+
         if (!cosmeticHolder.canEquipCosmetic(cosmetic)) {
             MessagesUtil.sendDebugMessages("No Cosmetic Permission");
             MessagesUtil.sendMessage(viewer, "no-cosmetic-permission");
+            try {
+                if (!actionConfig.node("no-permission").virtual()) actionStrings.addAll(actionConfig.node("no-permission").getList(String.class));
+                Actions.runActions(viewer, cosmeticHolder, actionStrings);
+            } catch (SerializationException e) {
+                e.printStackTrace();
+            }
             return;
         }
 
@@ -75,10 +84,7 @@ public class TypeCosmetic extends Type {
 
         if (!isRequiredClick) isUnEquippingCosmetic = false;
 
-        List<String> actionStrings = new ArrayList<>();
-        ConfigurationNode actionConfig = config.node("actions");
-
-        MessagesUtil.sendDebugMessages("Running Actions");
+        MessagesUtil.sendDebugMessages("Running Actions - Handling Cosmetic");
 
         try {
             if (!actionConfig.node("any").virtual()) actionStrings.addAll(actionConfig.node("any").getList(String.class));
@@ -108,8 +114,8 @@ public class TypeCosmetic extends Type {
                 MessagesUtil.sendDebugMessages("Preparing for on-equip with the following checks:");
                 MessagesUtil.sendDebugMessages("CosmeticDyeable? " + cosmetic.isDyeable() + " / isDyeClick? " + isDyeClick + " / isHMCColorActive? " + Hooks.isActiveHook("HMCColor"));
                 // TODO: Redo this
-                if (cosmetic.isDyeable() && isDyeClick && Hooks.isActiveHook("HMCColor")) {
-                    DyeMenu.openMenu(viewer, cosmeticHolder, cosmetic);
+                if (cosmetic.isDyeable() && isDyeClick && DyeMenuProvider.canOpenDyeMenu()) {
+                    DyeMenuProvider.openMenu(viewer, cosmeticHolder, cosmetic);
                 } else if (isRequiredClick) {
                     cosmeticHolder.addCosmetic(cosmetic);
                     if (cosmeticHolder instanceof CosmeticUser user && user.isInWardrobe() && viewer != null)
@@ -157,19 +163,23 @@ public class TypeCosmetic extends Type {
             return itemStack;
         }
 
-        if (cosmeticHolder.hasCosmeticInSlot(cosmetic) && (!config.node("equipped-item").virtual() || !config.node("locked-equipped-item").virtual())) {
+        if (cosmeticHolder.hasCosmeticInSlot(cosmetic) && !config.node("equipped-item").virtual()) {
             MessagesUtil.sendDebugMessages("GUI Equipped Item");
-            ConfigurationNode equippedItem = config.node(cosmeticHolder.canEquipCosmetic(cosmetic, true) && !config.node("equipped-item").virtual() ? "equipped-item" : "locked-equipped-item");
+            ConfigurationNode equippedItem = config.node("equipped-item");
+
+            // If not defined, use the item defined in the regular item
             try {
                 if (equippedItem.node("material").virtual()) equippedItem.node("material").set(config.node("item", "material").getString());
             } catch (SerializationException e) {
-                // Nothing >:)
+                e.printStackTrace();
             }
+
             try {
                 itemStack = ItemSerializer.INSTANCE.deserialize(ItemStack.class, equippedItem);
             } catch (SerializationException e) {
                 throw new RuntimeException(e);
             }
+            MessagesUtil.sendDebugMessages("Equipped Item: " + itemStack);
             if (itemStack.hasItemMeta()) itemStack.setItemMeta(processItemMeta(viewer, itemStack.getItemMeta()));
             else MessagesUtil.sendDebugMessages("ItemStack has no ItemMeta in equipped item?");
             return itemStack;

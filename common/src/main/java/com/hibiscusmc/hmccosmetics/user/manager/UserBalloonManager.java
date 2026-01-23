@@ -5,6 +5,7 @@ import com.hibiscusmc.hmccosmetics.config.Settings;
 import com.hibiscusmc.hmccosmetics.cosmetic.types.CosmeticBalloonType;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUsers;
+import com.hibiscusmc.hmccosmetics.util.HMCCServerUtils;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import com.hibiscusmc.hmccosmetics.util.packets.HMCCPacketManager;
 import com.ticxo.modelengine.api.ModelEngineAPI;
@@ -49,7 +50,8 @@ public class UserBalloonManager {
             e.setSmall(true);
             e.setMarker(true);
             e.setPersistent(false);
-            e.getPersistentDataContainer().set(new NamespacedKey(HMCCosmeticsPlugin.getInstance(), "cosmeticMob"), PersistentDataType.SHORT, Short.valueOf("1"));
+            e.setAI(false);
+            e.getPersistentDataContainer().set(HMCCServerUtils.getCosmemeticMobKey(), PersistentDataType.BOOLEAN, true);
         });
     }
 
@@ -99,7 +101,12 @@ public class UserBalloonManager {
     }
 
     public void remove() {
-        pufferfish.destroyPufferfish();
+        // This code is like a brick road, always bumpy.
+        // Basically, the balloon viewers ignore people in wardrobe, which well, if your the user in the wardrobe, ain't including you.
+        // This manually passes in the viewers for it to destroy, which includes the person in the wardrobe
+        if (user.getPlayer() != null && user.isInWardrobe()) pufferfish.destroyPufferfish(List.of(user.getPlayer()));
+        else pufferfish.destroyPufferfish();
+
         if (balloonType == BalloonType.MODELENGINE) {
             final ModeledEntity entity = ModelEngineAPI.getModeledEntity(modelEntity);
             if (entity == null) {

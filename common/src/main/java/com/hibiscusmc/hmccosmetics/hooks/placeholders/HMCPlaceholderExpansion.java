@@ -9,7 +9,6 @@ import com.hibiscusmc.hmccosmetics.user.CosmeticUsers;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import com.hibiscusmc.hmccosmetics.util.TranslationUtil;
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
-import org.apache.commons.lang3.EnumUtils;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -74,29 +73,20 @@ public class HMCPlaceholderExpansion extends PlaceholderExpansion {
                 if (placeholderArgs.size() >= 2) {
                     CosmeticSlot slot = CosmeticSlot.valueOf(placeholderArgs.get(1).toUpperCase());
                     if (slot == null) return null;
-                    if (user.getCosmetic(slot) == null) return TranslationUtil.getTranslation("current-cosmetic", "no-cosmetic");
+                    Cosmetic cosmetic = user.getCosmetic(slot);
+                    if (cosmetic == null) return TranslationUtil.getTranslation("current-cosmetic", "no-cosmetic");
                     if (placeholderArgs.size() == 2) return user.getCosmetic(slot).getId();
 
                     String output;
                     switch (placeholderArgs.get(2).toLowerCase()) {
-                        case "material" -> {
-                            output = getMaterialName(user.getCosmetic(slot));
-                        }
-                        case "custommodeldata" -> {
-                            output = getModelData(user.getCosmetic(slot));
-                        }
-                        case "name" -> {
-                            output = getItemName(user.getCosmetic(slot));
-                        }
-                        case "lore" -> {
-                            output = getItemLore(user.getCosmetic(slot));
-                        }
-                        case "permission" -> {
-                            output = user.getCosmetic(slot).getPermission();
-                        }
-                        default -> {
-                            output = user.getCosmetic(slot).getId();
-                        }
+                        case "material" -> output = getMaterialName(cosmetic);
+                        case "custommodeldata" -> output = getModelData(cosmetic);
+                        case "itemmodel" -> output = getItemModel(cosmetic);
+                        case "itemname" -> output = getItemName(cosmetic);
+                        case "name" -> output = getDisplayName(cosmetic);
+                        case "lore" -> output = getItemLore(cosmetic);
+                        case "permission" -> output = user.getCosmetic(slot).getPermission();
+                        default -> output = user.getCosmetic(slot).getId();
                     }
                     if (output == null) output = "none";
                     return TranslationUtil.getTranslation("current-cosmetic", output);
@@ -120,16 +110,21 @@ public class HMCPlaceholderExpansion extends PlaceholderExpansion {
                 }
             case "equipped":
                 if (placeholderArgs.size() >= 2) {
-                    String args1 = placeholderArgs.get(1);
-
-                    String rawSlot = args1.toUpperCase();
+                    StringBuilder lookupStringBuilder = new StringBuilder();
+                    for (int i = 1; i < placeholderArgs.size(); i++) {
+                        String append = placeholderArgs.get(i);
+                        if (lookupStringBuilder.isEmpty()) lookupStringBuilder.append(append);
+                        else lookupStringBuilder.append("_").append(append);
+                    }
+                    String lookupString = lookupStringBuilder.toString();
+                    String rawSlot = lookupString.toUpperCase();
                     if (CosmeticSlot.contains(rawSlot)) {
-                        return TranslationUtil.getTranslation("equipped-cosmetic", String.valueOf(user.getCosmetic(CosmeticSlot.valueOf(args1.toUpperCase())) != null));
+                        return TranslationUtil.getTranslation("equipped-cosmetic", String.valueOf(user.getCosmetic(CosmeticSlot.valueOf(lookupString.toUpperCase())) != null));
                     }
 
-                    MessagesUtil.sendDebugMessages(args1);
+                    MessagesUtil.sendDebugMessages(lookupString);
 
-                    Cosmetic cosmetic = Cosmetics.getCosmetic(args1);
+                    Cosmetic cosmetic = Cosmetics.getCosmetic(lookupString);
                     if (cosmetic == null) {
                         if (placeholderArgs.size() == 3) {
                             Cosmetic secondAttemptCosmetic = Cosmetics.getCosmetic(placeholderArgs.get(1) + "_" + placeholderArgs.get(2));
@@ -222,13 +217,55 @@ public class HMCPlaceholderExpansion extends PlaceholderExpansion {
         return String.valueOf(itemMeta.getCustomModelData());
     }
 
+
+
+    /**
+     * Gets the cosmetic items item model
+     * @param cosmetic The cosmetic to get its item model
+     * @return The cosmetic items item model
+     */
+    @Nullable
+    public String getItemModel(@NotNull Cosmetic cosmetic) {
+        try {
+            ItemStack item = cosmetic.getItem();
+            if (item == null) return null;
+            if (!item.hasItemMeta()) return null;
+            ItemMeta itemMeta = item.getItemMeta();
+            if (itemMeta == null && itemMeta.hasItemModel() ) return null;
+            return itemMeta.getItemModel().asString();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+
+
+    /**
+     * Gets the cosmetic items item name
+     * @param cosmetic The cosmetic to get its items item name
+     * @return The cosmetic items item name
+     */
+    @Nullable
+    public String getItemName(@NotNull Cosmetic cosmetic) {
+        try {
+            ItemStack item = cosmetic.getItem();
+            if (item == null) return null;
+            if (!item.hasItemMeta()) return null;
+            ItemMeta itemMeta = item.getItemMeta();
+            if (itemMeta == null || !itemMeta.hasItemName()) return null;
+            return itemMeta.getDisplayName();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
     /**
      * Gets the cosmetic items display name
      * @param cosmetic The cosmetic to get its items display name
      * @return The cosmetic items display name
      */
     @Nullable
-    public String getItemName(@NotNull Cosmetic cosmetic) {
+    public String getDisplayName(@NotNull Cosmetic cosmetic) {
         ItemStack item = cosmetic.getItem();
         if (item == null) return null;
         if (!item.hasItemMeta()) return null;

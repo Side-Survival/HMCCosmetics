@@ -4,8 +4,8 @@ import com.hibiscusmc.hmccolor.HMCColorConfig;
 import com.hibiscusmc.hmccolor.HMCColorContextKt;
 import com.hibiscusmc.hmccosmetics.HMCCosmeticsPlugin;
 import com.hibiscusmc.hmccosmetics.config.Settings;
-import com.hibiscusmc.hmccosmetics.config.Wardrobe;
-import com.hibiscusmc.hmccosmetics.config.WardrobeLocation;
+import com.hibiscusmc.hmccosmetics.config.section.Wardrobe;
+import com.hibiscusmc.hmccosmetics.config.section.WardrobeLocation;
 import com.hibiscusmc.hmccosmetics.config.WardrobeSettings;
 import com.hibiscusmc.hmccosmetics.cosmetic.Cosmetic;
 import com.hibiscusmc.hmccosmetics.cosmetic.CosmeticSlot;
@@ -13,12 +13,14 @@ import com.hibiscusmc.hmccosmetics.cosmetic.Cosmetics;
 import com.hibiscusmc.hmccosmetics.database.Database;
 import com.hibiscusmc.hmccosmetics.gui.Menu;
 import com.hibiscusmc.hmccosmetics.gui.Menus;
-import com.hibiscusmc.hmccosmetics.gui.special.DyeMenu;
+import com.hibiscusmc.hmccosmetics.gui.special.DyeMenuProvider;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUser;
 import com.hibiscusmc.hmccosmetics.user.CosmeticUsers;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import com.hibiscusmc.hmccosmetics.util.HMCCServerUtils;
+import me.lojosho.hibiscuscommons.HibiscusCommonsPlugin;
 import me.lojosho.hibiscuscommons.hooks.Hooks;
+import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.tag.resolver.Placeholder;
 import net.kyori.adventure.text.minimessage.tag.resolver.TagResolver;
 import org.bukkit.Bukkit;
@@ -28,6 +30,7 @@ import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Set;
@@ -151,10 +154,18 @@ public class CosmeticCommand implements CommandExecutor {
                     return true;
                 }
 
+                final ItemStack cosmeticItem = cosmetic.getItem();
+                Component itemName = Component.text(cosmetic.getId());
+                if (HibiscusCommonsPlugin.isOnPaper() && cosmeticItem != null) {
+                    itemName = cosmeticItem.effectiveName();
+                }
+
                 TagResolver placeholders =
                         TagResolver.resolver(Placeholder.parsed("cosmetic", cosmetic.getFormattedName()),
                                 TagResolver.resolver(Placeholder.parsed("player", player.getName())),
-                                TagResolver.resolver(Placeholder.parsed("cosmeticslot", cosmetic.getSlot().toString())));
+                                TagResolver.resolver(Placeholder.parsed("cosmeticslot", cosmetic.getSlot().toString())),
+                                TagResolver.resolver(Placeholder.component("cosmetic_item_name", itemName))
+                        );
 
                 if (!silent) MessagesUtil.sendMessage(player, "equip-cosmetic", placeholders);
 
@@ -198,15 +209,23 @@ public class CosmeticCommand implements CommandExecutor {
                 }
 
                 for (CosmeticSlot cosmeticSlot : cosmeticSlots) {
-                    if (user.getCosmetic(cosmeticSlot) == null) {
+                    final Cosmetic cosmetic = user.getCosmetic(cosmeticSlot);
+                    if (cosmetic == null) {
                         if (!silent) MessagesUtil.sendMessage(sender, "no-cosmetic-slot");
                         continue;
+                    }
+
+                    final ItemStack cosmeticItem = cosmetic.getItem();
+                    Component itemName = Component.text(cosmetic.getId());
+                    if (HibiscusCommonsPlugin.isOnPaper() && cosmeticItem != null) {
+                        itemName = cosmeticItem.effectiveName();
                     }
 
                     TagResolver placeholders =
                             TagResolver.resolver(Placeholder.parsed("cosmetic", user.getCosmetic(cosmeticSlot).getFormattedName()),
                                     TagResolver.resolver(Placeholder.parsed("player", player.getName())),
-                                    TagResolver.resolver(Placeholder.parsed("cosmeticslot", cosmeticSlot.toString())));
+                                    TagResolver.resolver(Placeholder.parsed("cosmeticslot", cosmeticSlot.toString())),
+                                    TagResolver.resolver(Placeholder.component("cosmetic_item_name", itemName)));
 
                     if (!silent) MessagesUtil.sendMessage(player, "unequip-cosmetic", placeholders);
 
@@ -215,7 +234,7 @@ public class CosmeticCommand implements CommandExecutor {
                 }
                 return true;
             }
-            case ("wardrobe") -> {
+            case ("wardrobes") -> {
                 if (sender instanceof Player) player = ((Player) sender).getPlayer();
 
                 if (args.length == 1) {
@@ -309,13 +328,17 @@ public class CosmeticCommand implements CommandExecutor {
                     return true;
                 }
 
-                String rawSlot = args[1];
+                final String rawSlot = args[1];
                 if (!CosmeticSlot.contains(rawSlot)) {
                     if (!silent) MessagesUtil.sendMessage(player, "invalid-slot");
                     return true;
                 }
-                CosmeticSlot slot = CosmeticSlot.valueOf(rawSlot);
-                Cosmetic cosmetic = user.getCosmetic(slot);
+                final CosmeticSlot slot = CosmeticSlot.valueOf(rawSlot); // This is checked above. While IDEs may say the slot might be null, it will not be.
+                final Cosmetic cosmetic = user.getCosmetic(slot);
+                if (cosmetic == null) {
+                    if (!silent) MessagesUtil.sendMessage(player, "invalid-slot");
+                    return true;
+                }
 
                 if (args.length >= 3) {
                     if (args[2].isEmpty()) {
@@ -329,7 +352,11 @@ public class CosmeticCommand implements CommandExecutor {
                     }
                     user.addCosmetic(cosmetic, color); // #FFFFFF
                 } else {
-                    DyeMenu.openMenu(user, cosmetic);
+                    if (DyeMenuProvider.canOpenDyeMenu()) {
+                        DyeMenuProvider.openMenu(player, user, cosmetic);
+                    } else {
+                        if (!silent) MessagesUtil.sendMessage(player, "invalid-color");
+                    }
                 }
             }
             case ("setwardrobesetting") -> {
@@ -346,10 +373,10 @@ public class CosmeticCommand implements CommandExecutor {
                 }
                 Wardrobe wardrobe = WardrobeSettings.getWardrobe(args[1]);
                 if (wardrobe == null) {
-                    wardrobe = new Wardrobe(args[1], new WardrobeLocation(null, null, null), null, -1, null);
-                    WardrobeSettings.addWardrobe(wardrobe);
-                    //MessagesUtil.sendMessage(player, "no-wardrobes");
-                    //return true;
+                    //wardrobe = new Wardrobe(args[1], new WardrobeLocation(null, null, null), null, -1, null);
+                    //WardrobeSettings.addWardrobe(wardrobe);
+                    MessagesUtil.sendMessage(player, "no-wardrobes");
+                    return true;
                 }
 
                 if (args[2].equalsIgnoreCase("npclocation")) {
@@ -397,10 +424,11 @@ public class CosmeticCommand implements CommandExecutor {
                     return true;
                 }
                 player.sendMessage("Passengers -> " + player.getPassengers());
-                if (user.hasCosmeticInSlot(CosmeticSlot.BACKPACK)) {
+                if (user.getUserBackpackManager() != null) {
                     player.sendMessage("Backpack Location -> " + user.getUserBackpackManager().getEntityManager().getLocation());
+                    player.sendMessage("Cosmetic Passengers -> " + user.getUserBackpackManager().getAreaEffectEntityId());
                 }
-                player.sendMessage("Cosmetic Passengers -> " + user.getUserBackpackManager().getAreaEffectEntityId());
+
                 player.sendMessage("Cosmetics -> " + user.getCosmetics());
                 player.sendMessage("EntityId -> " + player.getEntityId());
                 return true;

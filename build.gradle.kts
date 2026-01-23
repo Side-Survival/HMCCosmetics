@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.hibiscusmc"
-version = "2.8.0${getGitCommitHash()}"
+version = "2.8.3"
 
 allprojects {
     apply(plugin = "java")
@@ -75,7 +75,7 @@ allprojects {
         compileOnly(fileTree("${project.rootDir}/lib") { include("*.jar") })
         compileOnly("com.mojang:authlib:1.5.25")
         //compileOnly("org.spigotmc:spigot-api:1.18.2-R0.1-SNAPSHOT")
-        compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
+        compileOnly("io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT")
         compileOnly("org.jetbrains:annotations:24.1.0")
         compileOnly("me.clip:placeholderapi:2.11.6")
         compileOnly("com.ticxo.modelengine:ModelEngine:R4.0.6")
@@ -85,18 +85,21 @@ allprojects {
             exclude(group = "com.google.code.gson")
             exclude(group = "it.unimi.dsi")
             exclude(group = "com.sk89q.jnbt")
+            exclude(group = "org.enginehub.lin-bus.format")
         }
         compileOnly("io.github.toxicity188:BetterHud-standard-api:1.12") //Standard api
         compileOnly("io.github.toxicity188:BetterHud-bukkit-api:1.12") //Platform api
         compileOnly("io.github.toxicity188:BetterCommand:1.3") //BetterCommand library
         //compileOnly("it.unimi.dsi:fastutil:8.5.14")
         compileOnly("org.projectlombok:lombok:1.18.34")
-        compileOnly("me.lojosho:HibiscusCommons:0.7.0-9ced7fd8")
+        compileOnly("me.lojosho:HibiscusCommons:0.8.3-a89bcec3")
 
-        // Handled by Spigot Library Loader
-        compileOnly("net.kyori:adventure-api:4.23.0")
-        compileOnly("net.kyori:adventure-text-minimessage:4.23.0")
-        compileOnly("net.kyori:adventure-platform-bukkit:4.4.0")
+        // Handled by Spigot Library Loader ~ Deprecated as of Dec 16, 2025
+        /*
+        compileOnly("net.kyori:adventure-api:4.24.0")
+        compileOnly("net.kyori:adventure-text-minimessage:4.24.0")
+        compileOnly("net.kyori:adventure-platform-bukkit:4.4.1")
+         */
 
         annotationProcessor("org.projectlombok:lombok:1.18.36")
         testCompileOnly("org.projectlombok:lombok:1.18.36")
@@ -106,7 +109,6 @@ allprojects {
             exclude("net.kyori") // Already have adventure API
         }
         implementation("com.owen1212055:particlehelper:1.0.0-SNAPSHOT")
-        implementation("com.ticxo.playeranimator:PlayerAnimator:R1.2.7")
     }
 
     tasks {
@@ -139,12 +141,14 @@ tasks {
     }
 
     runServer {
-        minecraftVersion("1.21.6")
+        minecraftVersion("1.21.8")
 
         downloadPlugins {
             hangar("PlaceholderAPI", "2.11.6")
-            url("https://download.luckperms.net/1593/bukkit/loader/LuckPerms-Bukkit-5.5.8.jar")
+            hangar("Multiverse-Core", "5.3.4")
+            url("https://download.luckperms.net/1604/bukkit/loader/LuckPerms-Bukkit-5.5.15.jar")
             github("Test-Account666", "PlugManX", "2.4.1", "PlugManX-2.4.1.jar")
+            github("gecolay", "GSit", "3.1.1", "GSit-3.1.1.jar")
         }
     }
 
