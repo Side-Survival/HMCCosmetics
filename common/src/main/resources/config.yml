@@ -98,6 +98,8 @@ cosmetic-settings:
   # If the plugin should set the pitch of balloons to always be 0, to prevent players looking up affecting the balloon.
   # This only applies to models that have a "head" section to them. THIS DOES NOT IMPACT THE REST OF THE ENTITY.
   balloon-head-unmoving: false
+  # Should, by default, the lead be spawned for the balloon
+  balloon-lead-default: true
   # how the balloon should be positioned relative to the player
   balloon-offset:
     x: 0.5
@@ -109,16 +111,17 @@ menu-settings:
     enabled: true
     # This is the cooldown in miliseconds for the menu. This is useful for servers that have a lot of players.
     # (So if a user clicks the menu, it won't spam the server with requesting it to refresh itself)
-    time: 1000
+    time: 100
   shading:
     # Below is the shading mechanism behind cosmetic items. This is a bit complicated, but it allows for a lot of customization.
     # The shading is done through the title and by shifting textures around. This is done by offsets.
     # Only Nexo is support by default. Vanilla can't properly handle it without a lot of unicodes and ItemsAdder adds weird offsets and decolors it. (This is why it is disabled by default)
-    enabled: false # Default of menus having shading. This can be toggled individually in menus with "shading: true/false"
+    # Enable by using MODERN or TEXT
+    type: NONE
     first-row-shift: "<shift:-153>" # Nexo: "<shift:-153>"
     sequent-row-shift: " <shift:-153>" # Nexo: " <shift:-153>" (Space is important here!)
     individual-column-shift: "<shift:-3>" # Nexo: "<shift:-3>"
-    background: "<glyph:hmcc_shade_row_<row>:colorable> " # Nexo: "<glyph:shade_row_<row>:colorable>
+    background: "<glyph:hmcc_shade_row_<row>:colorable> " # Nexo: "<glyph:shade_row_<row>:colorable> 
     clear-background: "<glyph:hmcc_clear_row_<row>:colorable> " # Nexo: "<glyph:clear_row_<row>:colorable> "
     #These use MiniMessage for color! https://docs.advntr.dev/minimessage/format.html#color
     equipped-cosmetic-color: "<yellow>"
@@ -156,6 +159,9 @@ hook-settings:
     prefer-hmccolor-menu: false
 unavailable-item-material: BARRIER
 unavailable-item-model-data: 0
+vulcan:
+  # Will ignore any violations in Vulcan if a player is within a wardrobe
+  exempt-checks-in-wardrobe: false
 wardrobe:
   # how much yaw should change per tick, set to 0 for none
   rotation-speed: 3
@@ -186,9 +192,9 @@ wardrobe:
     color: BLUE
   transition:
     enabled: true
-    # If you use ItemsAdder, set this to "<black>%img_title%
+    # If you use ItemsAdder, set this to "<black>%img_hmcc_title%
     # If you use Oraxen, set this to "<black><glyph:title>"
-    # If you use Nexo, set this to "<black>%nexo_title%" and use PlaceholderAPI
+    # If you use Nexo, set this to "<black><glyph:hmcc_title:colorable>" (alternatively, you can use PlaceholderAPI and put: "<black>%nexo_hmcc_title%" )
     text: "<black>"
     delay: 40
     title-fade-in: 1000 # milliseconds

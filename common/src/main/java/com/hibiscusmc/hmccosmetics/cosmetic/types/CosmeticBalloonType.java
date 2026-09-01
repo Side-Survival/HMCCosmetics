@@ -35,7 +35,7 @@ public class CosmeticBalloonType extends Cosmetic implements CosmeticUpdateBehav
         super(id, config);
 
         String modelId = config.node("model").getString();
-        showLead = config.node("show-lead").getBoolean(true);
+        showLead = config.node("show-lead").getBoolean(Settings.isBalloonDefaultShowLead());
 
         ConfigurationNode balloonOffsetNode = config.node("balloon-offset");
         if (balloonOffsetNode.virtual())
@@ -76,6 +76,7 @@ public class CosmeticBalloonType extends Cosmetic implements CosmeticUpdateBehav
             List<Player> sendTo = userBalloonManager.getPufferfish().refreshViewers(newLocation);
             if (sendTo.isEmpty()) return;
             user.getBalloonManager().getPufferfish().spawnPufferfish(newLocation, sendTo);
+            HMCCPacketManager.sendLeashPacket(userBalloonManager.getPufferfishBalloonId(), entity.getEntityId(), sendTo);
         }
     }
 
@@ -96,25 +97,23 @@ public class CosmeticBalloonType extends Cosmetic implements CosmeticUpdateBehav
         newLocation = newLocation.clone().add(getBalloonOffset());
         if (Settings.isBalloonHeadForward()) newLocation.setPitch(0);
 
-        List<Player> viewer = HMCCPacketManager.getViewers(entity.getLocation());
+        List<Player> viewers = HMCCPacketManager.getViewers(entity.getLocation());
 
         if (entity.getLocation().getWorld() != userBalloonManager.getLocation().getWorld()) {
             userBalloonManager.getModelEntity().teleport(newLocation);
-            HMCCPacketManager.sendTeleportPacket(userBalloonManager.getPufferfishBalloonId(), newLocation, false, viewer);
+            HMCCPacketManager.sendTeleportPacket(userBalloonManager.getPufferfishBalloonId(), newLocation, false, viewers);
             return;
         }
 
-        Vector velocity = newLocation.toVector().subtract(currentLocation.toVector());
+        //Vector velocity = newLocation.toVector().subtract(currentLocation.toVector());
         userBalloonManager.setLocation(newLocation);
-        userBalloonManager.setVelocity(velocity.multiply(1.1));
 
         MessagesUtil.sendDebugMessages("Balloon Cosmetic Update for " + user.getEntity().getName());
         MessagesUtil.sendDebugMessages("Ballon previous location is " + currentLocation);
         MessagesUtil.sendDebugMessages("Balloon location set to " + newLocation);
-        MessagesUtil.sendDebugMessages("Balloon velocity set to " + velocity);
 
-        HMCCPacketManager.sendTeleportPacket(userBalloonManager.getPufferfishBalloonId(), newLocation, false, viewer);
-        HMCCPacketManager.sendLeashPacket(userBalloonManager.getPufferfishBalloonId(), entity.getEntityId(), viewer);
+        HMCCPacketManager.sendTeleportPacket(userBalloonManager.getPufferfishBalloonId(), newLocation, false, viewers);
+        HMCCPacketManager.sendLeashPacket(userBalloonManager.getPufferfishBalloonId(), entity.getEntityId(), viewers);
     }
 
     public boolean isDyeablePart(String name) {

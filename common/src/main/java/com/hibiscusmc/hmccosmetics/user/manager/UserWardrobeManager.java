@@ -22,10 +22,7 @@ import me.lojosho.hibiscuscommons.nms.NMSPacketSender;
 import me.lojosho.hibiscuscommons.packets.wrapper.PacketWrapper;
 import net.kyori.adventure.bossbar.BossBar;
 import net.kyori.adventure.text.Component;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.Location;
-import org.bukkit.Material;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.entity.EntityType;
@@ -37,6 +34,7 @@ import org.bukkit.scheduler.BukkitRunnable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 public class UserWardrobeManager {
 
@@ -77,8 +75,9 @@ public class UserWardrobeManager {
     private NMSPacketSender packetSender = NMSHandlers.getHandler().getPacketSender();
 
     public UserWardrobeManager(CosmeticUser user, Wardrobe wardrobe) {
-        NPC_ID = me.lojosho.hibiscuscommons.util.ServerUtils.getNextEntityId();
-        ARMORSTAND_ID = me.lojosho.hibiscuscommons.util.ServerUtils.getNextEntityId();
+        World world = user.getEntity().getWorld();
+        NPC_ID = me.lojosho.hibiscuscommons.util.ServerUtils.getNextEntityId(world);
+        ARMORSTAND_ID = me.lojosho.hibiscuscommons.util.ServerUtils.getNextEntityId(world);
         WARDROBE_UUID = UUID.randomUUID();
         this.user = user;
 
@@ -90,8 +89,22 @@ public class UserWardrobeManager {
         this.npcLocation = wardrobeLocation.getNpcLocation();
 
         String defaultMenu = wardrobe.getDefaultMenu();
-        if (defaultMenu != null && Menus.hasMenu(defaultMenu)) this.lastOpenMenu = Menus.getMenu(defaultMenu);
-        else this.lastOpenMenu = Menus.getDefaultMenu();
+        if (defaultMenu != null) {
+            // User has defined a custom menu in the wardrobe config
+            Menu menu = Menus.getMenu(defaultMenu);
+            if (menu != null) {
+                // User provided a good, valid menu
+                this.lastOpenMenu = Menus.getMenu(defaultMenu);
+            } else {
+                // User provided a menu that does not exist in HMCC
+                this.lastOpenMenu = Menus.getDefaultMenu();
+                MessagesUtil.sendDebugMessages("Unable to set menu (" + defaultMenu + ") in wardrobe " + getWardrobe().getId() + ". Defaulting to default menu defined in config.yml", Level.WARNING);
+                if (this.lastOpenMenu == null) {
+                    // That means that even the default menu is null in the config.
+                    MessagesUtil.sendDebugMessages("Unable to set any menu in wardrobe " + getWardrobe().getId() + " as the fallback default menu (defined in config.yml) is invalid.", Level.WARNING);
+                }
+            }
+        }
 
         wardrobeStatus = WardrobeStatus.SETUP;
     }
@@ -134,9 +147,9 @@ public class UserWardrobeManager {
             viewerPackets.add(packetBuilder.buildEntityCameraPacket(ARMORSTAND_ID));
 
             // NPC
-            npcName = "WardrobeNPC-" + NPC_ID;
-            while (npcName.length() > 16) {
-                npcName = npcName.substring(16);
+            npcName = "Mannequin";
+            if (npcName.length() >= 16) {
+                npcName = npcName.substring(0, 15);
             }
             viewerPackets.add(packetBuilder.buildPlayerInfoAddPacket(player, NPC_ID, WARDROBE_UUID, npcName));
             viewerPackets.add(packetBuilder.buildEntitySpawnPacket(NPC_ID, WARDROBE_UUID, EntityType.PLAYER, npcLocation));

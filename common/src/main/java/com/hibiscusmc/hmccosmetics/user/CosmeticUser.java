@@ -24,6 +24,7 @@ import com.hibiscusmc.hmccosmetics.util.HMCCInventoryUtils;
 import com.hibiscusmc.hmccosmetics.util.MessagesUtil;
 import com.hibiscusmc.hmccosmetics.util.packets.HMCCPacketManager;
 import lombok.Getter;
+import lombok.Setter;
 import me.lojosho.hibiscuscommons.hooks.Hooks;
 import me.lojosho.hibiscuscommons.nms.NMSHandlers;
 import me.lojosho.hibiscuscommons.util.InventoryUtils;
@@ -41,6 +42,7 @@ import org.bukkit.inventory.meta.SkullMeta;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -60,6 +62,10 @@ public class CosmeticUser implements CosmeticHolder {
     // Cosmetic Settings/Toggles
     private final ArrayList<HiddenReason> hiddenReason = new ArrayList<>();
     private final HashMap<CosmeticSlot, Color> colors = new HashMap<>();
+
+    @Getter @Setter
+    @ApiStatus.Internal
+    private boolean hidingBackpackPose = false; // This is so dumb, but I need to know if a user has their backpack hidden because of their pose. See #214. Probably move over to a better system in the future.
 
     /**
      * Use {@link #CosmeticUser(UUID)} instead and use {@link #initialize(UserData)} to populate the user with data.
@@ -209,8 +215,8 @@ public class CosmeticUser implements CosmeticHolder {
     }
 
     @Override
-    public Cosmetic getCosmetic(@NotNull CosmeticSlot slot) {
-        return playerCosmetics.get(slot);
+    public @Nullable Cosmetic getCosmetic(@NotNull CosmeticSlot slot) {
+        return playerCosmetics.getOrDefault(slot, null);
     }
 
     @Override
@@ -292,7 +298,7 @@ public class CosmeticUser implements CosmeticHolder {
         return playerCosmetics.containsKey(slot);
     }
 
-    public Set<CosmeticSlot> getSlotsWithCosmetics() {
+    public @NotNull Set<CosmeticSlot> getSlotsWithCosmetics() {
         return Set.copyOf(playerCosmetics.keySet());
     }
 
@@ -393,7 +399,7 @@ public class CosmeticUser implements CosmeticHolder {
     }
 
     @SuppressWarnings("deprecation")
-    public ItemStack getUserCosmeticItem(@NotNull Cosmetic cosmetic, @Nullable ItemStack item) {
+    public @NotNull ItemStack getUserCosmeticItem(@NotNull Cosmetic cosmetic, @Nullable ItemStack item) {
         if (item == null) {
             //MessagesUtil.sendDebugMessages("GetUserCosemticUser Item is null");
             return new ItemStack(Material.AIR);
@@ -454,11 +460,11 @@ public class CosmeticUser implements CosmeticHolder {
         return item;
     }
 
-    public UserBalloonManager getBalloonManager() {
+    public @Nullable UserBalloonManager getBalloonManager() {
         return this.userBalloonManager;
     }
 
-    public UserWardrobeManager getWardrobeManager() {
+    public @Nullable UserWardrobeManager getWardrobeManager() {
         return userWardrobeManager;
     }
 
@@ -516,16 +522,18 @@ public class CosmeticUser implements CosmeticHolder {
      * @param ejected If true, the player was ejected from the wardrobe (Skips transition). If false, the player left the wardrobe normally.
      */
     public void leaveWardrobe(boolean ejected) {
-        PlayerWardrobeLeaveEvent event = new PlayerWardrobeLeaveEvent(this);
-        Bukkit.getPluginManager().callEvent(event);
-        if (event.isCancelled()) {
-            return;
-        }
-        MessagesUtil.sendDebugMessages("Leaving Wardrobe");
-        if (!getWardrobeManager().getWardrobeStatus().equals(UserWardrobeManager.WardrobeStatus.RUNNING)) return;
+        UserWardrobeManager userWardrobe = getWardrobeManager();
+        if (userWardrobe == null) return;
 
-        getWardrobeManager().setWardrobeStatus(UserWardrobeManager.WardrobeStatus.STOPPING);
-        getWardrobeManager().setLastOpenMenu(Menus.getDefaultMenu());
+        if (userWardrobe.getWardrobeStatus() != UserWardrobeManager.WardrobeStatus.RUNNING) return;
+        PlayerWardrobeLeaveEvent event = new PlayerWardrobeLeaveEvent(this, userWardrobe);
+        Bukkit.getPluginManager().callEvent(event);
+        if (event.isCancelled()) return;
+
+        MessagesUtil.sendDebugMessages("Leaving Wardrobe");
+
+        userWardrobe.setWardrobeStatus(UserWardrobeManager.WardrobeStatus.STOPPING);
+        userWardrobe.setLastOpenMenu(Menus.getDefaultMenu());
 
         if (WardrobeSettings.isEnabledTransition() && !ejected) {
             MessagesUtil.sendTitle(
@@ -585,7 +593,6 @@ public class CosmeticUser implements CosmeticHolder {
         userBalloonManager1.addPlayerToModel(this, cosmeticBalloonType, getCosmeticColor(cosmeticBalloonType.getSlot()));
 
         this.userBalloonManager = userBalloonManager1;
-        //this.userBalloonManager = NMSHandlers.getHandler().spawnBalloon(this, cosmeticBalloonType);
     }
 
     public void despawnBalloon() {
@@ -686,14 +693,15 @@ public class CosmeticUser implements CosmeticHolder {
         }
     }
 
-    public void hideCosmetics(HiddenReason reason) {
+    public void hideCosmetics(@NotNull HiddenReason reason) {
+        if (hiddenReason.contains(reason)) return;
+
         PlayerCosmeticHideEvent event = new PlayerCosmeticHideEvent(this, reason);
         Bukkit.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             return;
         }
-
-        if (!hiddenReason.contains(reason)) hiddenReason.add(reason);
+        hiddenReason.add(reason);
         if (hasCosmeticInSlot(CosmeticSlot.BALLOON)) {
             despawnBalloon();
             //getBalloonManager().removePlayerFromModel(getPlayer());
@@ -710,14 +718,15 @@ public class CosmeticUser implements CosmeticHolder {
      * This is used to silently add a hidden flag to the user. This will not trigger any events or checks, nor do anything else
      * @param reason
      */
-    public void silentlyAddHideFlag(HiddenReason reason) {
+    public void silentlyAddHideFlag(@NotNull HiddenReason reason) {
         if (!hiddenReason.contains(reason)) hiddenReason.add(reason);
     }
 
-    public void showCosmetics(HiddenReason reason) {
+    public void showCosmetics(@NotNull HiddenReason reason) {
         if (hiddenReason.isEmpty()) return;
+        if (!hiddenReason.contains(reason)) return;
 
-        PlayerCosmeticShowEvent event = new PlayerCosmeticShowEvent(this);
+        PlayerCosmeticShowEvent event = new PlayerCosmeticShowEvent(this, reason);
         Bukkit.getPluginManager().callEvent(event);
         if (event.isCancelled()) {
             return;
@@ -742,16 +751,6 @@ public class CosmeticUser implements CosmeticHolder {
         MessagesUtil.sendDebugMessages("ShowCosmetics");
     }
 
-
-    /**
-     * This method is deprecated and will be removed in the future. Use {@link #isHidden()} instead.
-     * @return
-     */
-    @Deprecated(since = "2.7.2-DEV", forRemoval = true)
-    public boolean getHidden() {
-        return !hiddenReason.isEmpty();
-    }
-
     public boolean isHidden() {
         return !hiddenReason.isEmpty();
     }
@@ -760,7 +759,7 @@ public class CosmeticUser implements CosmeticHolder {
         return hiddenReason.contains(reason);
     }
 
-    public List<HiddenReason> getHiddenReasons() {
+    public @NotNull List<HiddenReason> getHiddenReasons() {
         return hiddenReason;
     }
 
