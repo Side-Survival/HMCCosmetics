@@ -126,20 +126,11 @@ public class HMCPlaceholderExpansion extends PlaceholderExpansion {
 
                     Cosmetic cosmetic = Cosmetics.getCosmetic(lookupString);
                     if (cosmetic == null) {
-                        if (placeholderArgs.size() == 3) {
-                            Cosmetic secondAttemptCosmetic = Cosmetics.getCosmetic(placeholderArgs.get(1) + "_" + placeholderArgs.get(2));
-                            if (secondAttemptCosmetic == null) {
-                                return "INVALID_COSMETIC";
-                            } else {
-                                cosmetic = secondAttemptCosmetic;
-                            }
-                        } else {
-                            if (CosmeticSlot.contains(args1.toUpperCase())) {
-                                return TranslationUtil.getTranslation("equipped-cosmetic", String.valueOf(user.getCosmetic(CosmeticSlot.valueOf(args1.toUpperCase())) != null));
-                            }
-
-                            return "INVALID_COSMETIC";
+                        if (CosmeticSlot.contains(lookupString.toUpperCase())) {
+                            return TranslationUtil.getTranslation("equipped-cosmetic", String.valueOf(user.getCosmetic(CosmeticSlot.valueOf(lookupString.toUpperCase())) != null));
                         }
+
+                        return "INVALID_COSMETIC";
                     }
                     Cosmetic equippedCosmetic = user.getCosmetic(cosmetic.getSlot());
                     if (equippedCosmetic == null) return TranslationUtil.getTranslation("equipped-cosmetic", "false");

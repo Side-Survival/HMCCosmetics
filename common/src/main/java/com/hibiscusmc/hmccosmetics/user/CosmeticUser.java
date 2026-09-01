@@ -197,10 +197,6 @@ public class CosmeticUser implements CosmeticHolder {
         }
 
         this.updateCosmetic();
-
-        if(isHidden() && !playerCosmetics.isEmpty()) {
-            MessagesUtil.sendActionBar(getPlayer(), "hidden-cosmetics");
-        }
     }
 
     public void destroy() {
